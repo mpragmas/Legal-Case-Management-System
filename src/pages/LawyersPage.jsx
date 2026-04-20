@@ -15,7 +15,8 @@ export default function LawyersPage() {
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [message, setMessage] = useState("");
 
-  const uniqueSpecializations = Array.from(new Set(lawyers.map((l) => l.specialization)));
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const filtered = lawyers.filter((l) => {
     if (search.trim()) {
@@ -32,6 +33,9 @@ export default function LawyersPage() {
     }
     return true;
   });
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedLawyers = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleRequest = (lawyerId) => {
     setSelectedLawyer(lawyerId);
@@ -55,52 +59,54 @@ export default function LawyersPage() {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-xl font-bold text-surface-900">Find a Lawyer</h1>
+              <h1 className="text-2xl font-black text-surface-900 tracking-tight">Legal Experts</h1>
               <p className="text-sm text-surface-500 mt-0.5">
-                Browse our network of qualified attorneys
+                {filtered.length} qualified attorneys available for representation
               </p>
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-2xl border border-surface-200">
+          <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-3xl border border-surface-200 shadow-sm">
             <div className="relative flex-1">
               <Search
                 size={18}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400"
               />
               <input
                 id="search-lawyers"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                 placeholder="Search by name or specialty..."
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-surface-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white transition-all"
+                className="w-full pl-12 pr-4 py-3 rounded-2xl border border-surface-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-surface-50/50 transition-all font-medium"
               />
             </div>
-            <select
-              value={specFilter}
-              onChange={(e) => setSpecFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-surface-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="all">All Specializations</option>
-              {uniqueSpecializations.map((spec) => (
-                <option key={spec} value={spec}>{spec}</option>
-              ))}
-            </select>
-            <select
-              value={expFilter}
-              onChange={(e) => setExpFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-surface-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="all">Any Experience</option>
-              <option value="0-5">0 - 5 years</option>
-              <option value="5-10">5 - 10 years</option>
-              <option value="10+">10+ years</option>
-            </select>
+            <div className="flex gap-3">
+              <select
+                value={specFilter}
+                onChange={(e) => { setSpecFilter(e.target.value); setCurrentPage(1); }}
+                className="px-4 py-3 rounded-2xl border border-surface-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                <option value="all">All Specialties</option>
+                {uniqueSpecializations.map((spec) => (
+                  <option key={spec} value={spec}>{spec}</option>
+                ))}
+              </select>
+              <select
+                value={expFilter}
+                onChange={(e) => { setExpFilter(e.target.value); setCurrentPage(1); }}
+                className="px-4 py-3 rounded-2xl border border-surface-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                <option value="all">Experience</option>
+                <option value="0-5">0 - 5 years</option>
+                <option value="5-10">5 - 10 years</option>
+                <option value="10+">10+ years</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((lawyer) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {paginatedLawyers.map((lawyer) => (
             <LawyerCard
               key={lawyer.id}
               lawyer={lawyer}
@@ -110,9 +116,41 @@ export default function LawyersPage() {
           ))}
         </div>
 
+        {filtered.length > itemsPerPage && (
+          <div className="flex items-center justify-center gap-2 pt-6">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="p-2 rounded-xl border border-surface-200 disabled:opacity-30 hover:bg-surface-50 transition-colors"
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`w-10 h-10 rounded-xl font-bold transition-all ${currentPage === p ? "bg-primary-600 text-white shadow-lg shadow-primary-600/20" : "text-surface-500 hover:bg-surface-50"}`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="p-2 rounded-xl border border-surface-200 disabled:opacity-30 hover:bg-surface-50 transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
+
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-surface-400">
-            <p className="text-sm">No lawyers match your search</p>
+          <div className="bg-white rounded-[3rem] border border-dashed border-surface-200 p-20 text-center animate-fade-in">
+            <Search size={48} className="mx-auto mb-4 text-surface-200" />
+            <h3 className="text-xl font-black text-surface-900 mb-2">No Matches Found</h3>
+            <p className="text-surface-500">Try adjusting your filters or search terms.</p>
           </div>
         )}
       </div>

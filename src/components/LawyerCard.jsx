@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Avatar } from "./Avatar";
-import { Star, Briefcase, Clock } from "lucide-react";
+import { Star, Briefcase, Clock, ChevronDown, ChevronUp } from "lucide-react";
 
 export function LawyerCard({ lawyer, onRequest, requested }) {
+  const [showBio, setShowBio] = useState(false);
+
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 p-6 hover:shadow-lg hover:shadow-primary-500/5 transition-all duration-300 group">
+    <div className="bg-white rounded-2xl border border-surface-200 p-6 hover:shadow-lg hover:shadow-primary-500/5 transition-all duration-300 group flex flex-col">
       <div className="flex items-start gap-4">
         <Avatar initials={lawyer.avatar} size="lg" />
         <div className="flex-1 min-w-0">
@@ -29,9 +32,23 @@ export function LawyerCard({ lawyer, onRequest, requested }) {
           </div>
         </div>
       </div>
-      <p className="mt-4 text-sm text-surface-600 leading-relaxed line-clamp-2">
-        {lawyer.bio}
-      </p>
+
+      <div className="mt-4 flex-1">
+        <button
+          onClick={() => setShowBio(!showBio)}
+          className="flex items-center gap-1 text-xs font-bold text-surface-400 hover:text-primary-600 uppercase tracking-widest transition-colors mb-2"
+        >
+          {showBio ? "Hide Biography" : "View Biography"}
+          {showBio ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+        
+        {showBio && (
+          <p className="text-sm text-surface-600 leading-relaxed animate-fade-in">
+            {lawyer.bio || "No biography provided."}
+          </p>
+        )}
+      </div>
+
       <button
         id={`request-lawyer-${lawyer.id}`}
         onClick={() => onRequest(lawyer.id)}

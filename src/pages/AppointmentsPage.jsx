@@ -56,15 +56,7 @@ export default function AppointmentsPage() {
     role === "lawyer"
       ? appointments.filter((a) => a.lawyerId === currentUserId)
       : appointments.filter(
-          (a) =>
-            a.clientId === currentUserId ||
-            (a.status === "available" &&
-              cases.some(
-                (c) =>
-                  c.clientId === currentUserId &&
-                  c.lawyerId === a.lawyerId &&
-                  c.status === "active",
-              )),
+          (a) => a.clientId === currentUserId || a.status === "available"
         );
 
   const myCases = cases.filter((c) =>
@@ -239,17 +231,29 @@ export default function AppointmentsPage() {
               </>
             )}
 
-            {apt.status === "completed" && role === "lawyer" && (
+            {apt.status === "completed" && (
               <button
                 onClick={() => handleOpenNotes(apt)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-surface-50 text-surface-700 rounded-lg text-sm font-semibold hover:bg-surface-100 transition-colors border border-surface-200"
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
+                  apt.notes 
+                    ? "bg-primary-50 text-primary-700 border-primary-200 hover:bg-primary-100" 
+                    : "bg-surface-50 text-surface-600 border-surface-200 hover:bg-surface-100"
+                }`}
               >
                 <MessageSquare size={16} />
-                Notes
+                {apt.notes ? "View Report" : "Add Report"}
               </button>
             )}
           </div>
         </div>
+        {apt.status === "completed" && apt.notes && (
+          <div className="mt-3 pt-3 border-t border-surface-100 w-full">
+            <p className="text-xs text-surface-400 font-black uppercase tracking-tighter mb-1 ml-1">Consultation Outcome</p>
+            <div className="bg-surface-50 p-3 rounded-xl border border-surface-100 text-sm text-surface-600 italic line-clamp-2">
+              "{apt.notes}"
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -502,30 +506,47 @@ export default function AppointmentsPage() {
       <Modal
         open={showNotesModal}
         onClose={() => setShowNotesModal(false)}
-        title="Appointment Notes"
+        title="Consultation Summary"
       >
-        <div className="space-y-4">
-          <p className="text-sm text-surface-500 bg-surface-50 p-3 rounded-xl border border-surface-100 italic">
-            Add confidential notes about this appointment that only you can see.
-          </p>
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-surface-700 ml-1">
-              Notes
-            </label>
-            <textarea
-              className="w-full px-4 py-3 bg-white border border-surface-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all outline-none min-h-[150px] resize-none shadow-inner"
-              placeholder="Case details, summary of discussion, next steps..."
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-            />
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 p-4 bg-primary-50 rounded-2xl border border-primary-100">
+            <div className="h-12 w-12 rounded-xl bg-white text-primary-600 flex items-center justify-center shadow-sm border border-primary-100">
+              <Calendar size={24} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-primary-600 uppercase tracking-tighter">Reference Date</p>
+              <p className="text-surface-900 font-bold">{selectedApt?.date}</p>
+            </div>
           </div>
 
-          <button
-            onClick={handleSaveNotes}
-            className="w-full bg-primary-600 text-white py-3 rounded-xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/20 active:scale-[0.98]"
-          >
-            Save Notes
-          </button>
+          <div className="space-y-2">
+            <label className="text-xs font-black text-surface-400 uppercase tracking-widest ml-1">
+              Internal Case Notes
+            </label>
+            <div className="relative">
+              <textarea
+                className="w-full px-5 py-4 bg-surface-50 border-2 border-surface-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none min-h-[200px] resize-none text-surface-800 leading-relaxed font-medium"
+                placeholder="Document the discussion, legal advice provided, and next steps..."
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+             <button
+              onClick={() => setShowNotesModal(false)}
+              className="flex-1 px-6 py-3.5 rounded-xl font-bold text-surface-500 hover:bg-surface-50 transition-all active:scale-95"
+            >
+              Discard
+            </button>
+            <button
+              onClick={handleSaveNotes}
+              className="flex-[2] bg-primary-600 text-white py-3.5 rounded-xl font-bold hover:bg-primary-700 transition-all shadow-xl shadow-primary-600/20 active:scale-95"
+            >
+              Save Report
+            </button>
+          </div>
         </div>
       </Modal>
     </DashboardLayout>

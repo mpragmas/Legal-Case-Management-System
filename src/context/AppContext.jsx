@@ -231,6 +231,23 @@ export function AppProvider({ children }) {
   // ── Appointment actions ──
   const createSlot = useCallback(
     async (date, time, duration = 60) => {
+      const now = new Date();
+      const selectedDate = new Date(`${date}T${time}:00`);
+
+      if (selectedDate < now) {
+        addToast("Cannot create slots in the past", "error");
+        return;
+      }
+
+      // Check for overlap
+      const isOverlap = appointments.some(
+        (a) => a.lawyerId === currentUserId && a.date === date && a.time === time
+      );
+      if (isOverlap) {
+        addToast("You already have a slot at this time", "error");
+        return;
+      }
+
       try {
         const apt = await api.createAppointment({
           lawyerId: currentUserId,
@@ -248,21 +265,25 @@ export function AppProvider({ children }) {
         addToast("Failed to create slot", "error");
       }
     },
-    [currentUserId, addToast]
+    [currentUserId, appointments, addToast]
   );
 
   const bookAppointment = useCallback(
-    async (appointmentId) => {
+    async (appointmentId, caseId) => {
       const apt = appointments.find((a) => a.id === appointmentId);
-      if (!apt) return;
-      const lawyerCases = cases.filter(
-        (c) => c.lawyerId === apt.lawyerId && c.clientId === currentUserId && c.status === "active"
-      );
-      const defaultCaseId = lawyerCases.length > 0 ? lawyerCases[0].id : null;
+      if (apt) {
+        const now = new Date();
+        const aptDate = new Date(`${apt.date}T${apt.time}:00`);
+        if (aptDate < now) {
+          addToast("This appointment time has already passed", "error");
+          return;
+        }
+      }
+
       try {
         const updated = await api.updateAppointment(appointmentId, {
           clientId: currentUserId,
-          caseId: defaultCaseId,
+          caseId: caseId,
           status: "confirmed",
         });
         setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? updated : a)));
@@ -271,7 +292,7 @@ export function AppProvider({ children }) {
         addToast("Failed to book appointment", "error");
       }
     },
-    [currentUserId, cases, appointments, addToast]
+    [currentUserId, appointments, addToast]
   );
 
   const editAppointment = useCallback(

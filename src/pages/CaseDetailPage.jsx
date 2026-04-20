@@ -19,7 +19,7 @@ export default function CaseDetailPage() {
     addNotes,
   } = useApp();
 
-  const caseItem = cases.find((c) => c.id === id);
+  const caseItem = cases.find((c) => String(c.id) === String(id));
 
   if (!caseItem) {
     return (
