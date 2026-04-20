@@ -20,6 +20,7 @@ export function AppProvider({ children }) {
   const [cases, setCases] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // ── Toast system ──
@@ -36,7 +37,7 @@ export function AppProvider({ children }) {
     if (!localStorage.getItem("token")) return;
     setLoading(true);
     try {
-      const [lawyersData, clientsData, requestsData, casesData, appointmentsData, documentsData] =
+      const [lawyersData, clientsData, requestsData, casesData, appointmentsData, documentsData, notificationsData] =
         await Promise.all([
           api.getLawyers(),
           api.getClients(),
@@ -44,6 +45,7 @@ export function AppProvider({ children }) {
           api.getCases(),
           api.getAppointments(),
           api.getDocuments(),
+          api.getNotifications(),
         ]);
       setLawyers(lawyersData);
       setClients(clientsData);
@@ -51,6 +53,7 @@ export function AppProvider({ children }) {
       setCases(casesData);
       setAppointments(appointmentsData);
       setDocuments(documentsData);
+      setNotifications(notificationsData);
     } catch (e) {
       // Token may have expired
       if (e.message?.includes("401") || e.message?.includes("Unauthorized")) {
@@ -354,9 +357,21 @@ export function AppProvider({ children }) {
     [currentUserId, addToast]
   );
 
+  // ── Notification actions ──
+  const markAsRead = useCallback(async (id) => {
+    try {
+      await api.markNotificationAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (e) {
+      console.error("Failed to mark notification as read", e);
+    }
+  }, []);
+
   // ── Helpers ──
-  const getLawyerById = useCallback((id) => lawyers.find((l) => l.id === id), [lawyers]);
-  const getClientById = useCallback((id) => clients.find((c) => c.id === id), [clients]);
+  const getLawyerById = useCallback((id) => lawyers.find((l) => l.id == id), [lawyers]);
+  const getClientById = useCallback((id) => clients.find((c) => c.id == id), [clients]);
 
   // ── Appointment reminders ──
   const upcomingReminders = useMemo(() => {
@@ -402,6 +417,7 @@ export function AppProvider({ children }) {
     cases,
     appointments,
     documents,
+    notifications,
     toasts,
     addToast,
     sendRequest,
@@ -416,6 +432,7 @@ export function AppProvider({ children }) {
     completeAppointment,
     addNotes,
     uploadDocument,
+    markAsRead,
     getLawyerById,
     getClientById,
     upcomingReminders,

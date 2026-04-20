@@ -67,4 +67,8 @@ export const api = {
     return request("POST", "/documents/upload", form, true);
   },
   deleteDocument: (id) => request("DELETE", `/documents/${id}`),
+
+  // Notifications
+  getNotifications: () => request("GET", "/notifications"),
+  markNotificationAsRead: (id) => request("PUT", `/notifications/${id}/read`),
 };
