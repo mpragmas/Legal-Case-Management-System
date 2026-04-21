@@ -51,18 +51,20 @@ export default function AppointmentsPage() {
     duration: "60",
   });
 
+  const myId = Number(currentUserId);
+
   // Filter appointments
   const myAppointments =
     role === "lawyer"
-      ? appointments.filter((a) => a.lawyerId === currentUserId)
+      ? appointments.filter((a) => a.lawyerId === myId)
       : appointments.filter(
-          (a) => a.clientId === currentUserId || a.status === "available"
+          (a) => a.clientId === myId || a.status === "available"
         );
 
   const myCases = cases.filter((c) =>
     role === "lawyer"
-      ? c.lawyerId === currentUserId
-      : c.clientId === currentUserId && c.status === "active",
+      ? c.lawyerId === myId
+      : c.clientId === myId && c.status === "active",
   );
 
   const handleSaveSlot = () => {
@@ -143,111 +145,116 @@ export default function AppointmentsPage() {
     return (
       <div
         key={apt.id}
-        className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-2xl bg-white border border-surface-200 hover:border-primary-300 hover:shadow-sm transition-all animate-fade-in"
+        className="group flex flex-col gap-4 p-4 rounded-2xl bg-white border border-surface-200 hover:border-primary-300 hover:shadow-sm transition-all animate-fade-in"
       >
-        {/* Date & Time Icon */}
-        <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-primary-50 text-primary-600 shrink-0">
-          <CalendarClock size={24} />
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-bold text-surface-900 truncate">{apt.date}</h4>
-            <span className="text-surface-400">•</span>
-            <span className="text-primary-600 font-semibold">{apt.time}</span>
+        {/* Top row: icon + info + actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {/* Date & Time Icon */}
+          <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-primary-50 text-primary-600 shrink-0">
+            <CalendarClock size={24} />
           </div>
 
-          <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-sm">
-            <span className="flex items-center gap-1.5 text-surface-500">
-              <Clock size={14} className="text-surface-400" />
-              {apt.duration} min
-            </span>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="font-bold text-surface-900 truncate">{apt.date}</h4>
+              <span className="text-surface-400">•</span>
+              <span className="text-primary-600 font-semibold">{apt.time}</span>
+            </div>
 
-            {person && (
+            <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-sm">
               <span className="flex items-center gap-1.5 text-surface-500">
-                <Avatar initials={person.avatar} size="xs" />
-                {person.name}
+                <Clock size={14} className="text-surface-400" />
+                {apt.duration} min
               </span>
-            )}
 
-            {linkedCase && (
-              <span className="flex items-center gap-1.5 text-primary-600 font-medium bg-primary-50 px-2 py-0.5 rounded-lg text-[11px] uppercase tracking-wider">
-                {linkedCase.title}
-              </span>
-            )}
+              {person && (
+                <span className="flex items-center gap-1.5 text-surface-500">
+                  <Avatar initials={person.avatar} size="xs" />
+                  {person.name}
+                </span>
+              )}
+
+              {linkedCase && (
+                <span className="flex items-center gap-1.5 text-primary-600 font-medium bg-primary-50 px-2 py-0.5 rounded-lg text-[11px] uppercase tracking-wider">
+                  {linkedCase.title}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Status & Actions */}
+          <div className="flex items-center gap-3 self-end sm:self-center">
+            <StatusBadge status={apt.status} />
+
+            <div className="flex items-center gap-1 border-l border-surface-100 pl-3">
+              {apt.status === "available" && role === "client" && (
+                <button
+                  onClick={() => handleBook(apt)}
+                  className="px-4 py-1.5 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors shadow-sm"
+                >
+                  Book Now
+                </button>
+              )}
+
+              {apt.status === "available" && role === "lawyer" && (
+                <>
+                  <button
+                    onClick={() => handleEditClick(apt)}
+                    className="p-2 text-surface-500 hover:bg-surface-50 hover:text-primary-600 rounded-lg transition-colors"
+                    title="Edit Slot"
+                  >
+                    <Pencil size={18} />
+                  </button>
+                  <button
+                    onClick={() => deleteAppointment(apt.id)}
+                    className="p-2 text-surface-500 hover:bg-red-50 hover:text-danger rounded-lg transition-colors"
+                    title="Delete Slot"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </>
+              )}
+
+              {apt.status === "confirmed" && role === "lawyer" && (
+                <>
+                  <button
+                    onClick={() => completeAppointment(apt.id)}
+                    className="p-2 text-surface-500 hover:bg-emerald-50 hover:text-success rounded-lg transition-colors"
+                    title="Mark Completed"
+                  >
+                    <CheckCircle2 size={18} />
+                  </button>
+                  <button
+                    onClick={() => cancelAppointment(apt.id)}
+                    className="p-2 text-surface-500 hover:bg-red-50 hover:text-danger rounded-lg transition-colors"
+                    title="Cancel Appointment"
+                  >
+                    <XCircle size={18} />
+                  </button>
+                </>
+              )}
+
+              {apt.status === "completed" && (
+                <button
+                  onClick={() => handleOpenNotes(apt)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
+                    apt.notes
+                      ? "bg-primary-50 text-primary-700 border-primary-200 hover:bg-primary-100"
+                      : "bg-surface-50 text-surface-600 border-surface-200 hover:bg-surface-100"
+                  }`}
+                >
+                  <MessageSquare size={16} />
+                  {apt.notes ? "View Report" : "Add Report"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Status & Actions */}
-        <div className="flex items-center gap-3 self-end sm:self-center">
-          <StatusBadge status={apt.status} />
-
-          <div className="flex items-center gap-1 border-l border-surface-100 pl-3">
-            {apt.status === "available" && role === "client" && (
-              <button
-                onClick={() => handleBook(apt)}
-                className="px-4 py-1.5 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors shadow-sm"
-              >
-                Book Now
-              </button>
-            )}
-
-            {apt.status === "available" && role === "lawyer" && (
-              <>
-                <button
-                  onClick={() => handleEditClick(apt)}
-                  className="p-2 text-surface-500 hover:bg-surface-50 hover:text-primary-600 rounded-lg transition-colors"
-                  title="Edit Slot"
-                >
-                  <Pencil size={18} />
-                </button>
-                <button
-                  onClick={() => deleteAppointment(apt.id)}
-                  className="p-2 text-surface-500 hover:bg-red-50 hover:text-danger rounded-lg transition-colors"
-                  title="Delete Slot"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </>
-            )}
-
-            {apt.status === "confirmed" && role === "lawyer" && (
-              <>
-                <button
-                  onClick={() => completeAppointment(apt.id)}
-                  className="p-2 text-surface-500 hover:bg-emerald-50 hover:text-success rounded-lg transition-colors"
-                  title="Mark Completed"
-                >
-                  <CheckCircle2 size={18} />
-                </button>
-                <button
-                  onClick={() => cancelAppointment(apt.id)}
-                  className="p-2 text-surface-500 hover:bg-red-50 hover:text-danger rounded-lg transition-colors"
-                  title="Cancel Appointment"
-                >
-                  <XCircle size={18} />
-                </button>
-              </>
-            )}
-
-            {apt.status === "completed" && (
-              <button
-                onClick={() => handleOpenNotes(apt)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
-                  apt.notes 
-                    ? "bg-primary-50 text-primary-700 border-primary-200 hover:bg-primary-100" 
-                    : "bg-surface-50 text-surface-600 border-surface-200 hover:bg-surface-100"
-                }`}
-              >
-                <MessageSquare size={16} />
-                {apt.notes ? "View Report" : "Add Report"}
-              </button>
-            )}
-          </div>
-        </div>
+        {/* Notes preview — separate row below */}
         {apt.status === "completed" && apt.notes && (
-          <div className="mt-3 pt-3 border-t border-surface-100 w-full">
+          <div className="pt-3 border-t border-surface-100">
             <p className="text-xs text-surface-400 font-black uppercase tracking-tighter mb-1 ml-1">Consultation Outcome</p>
             <div className="bg-surface-50 p-3 rounded-xl border border-surface-100 text-sm text-surface-600 italic line-clamp-2">
               "{apt.notes}"

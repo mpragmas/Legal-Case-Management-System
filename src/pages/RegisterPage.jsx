@@ -13,6 +13,7 @@ export default function RegisterPage() {
     role: "client",
   });
   const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState("");
 
   if (isAuthenticated) {
     navigate("/dashboard", { replace: true });
@@ -24,11 +25,17 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+      setError("Please fill in all fields");
       return;
     }
-    const success = await register(form.name, form.email, form.password, form.role);
-    if (success) navigate("/dashboard");
+    try {
+      await register(form.name, form.email, form.password, form.role);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message || "Registration failed. Please try again.");
+    }
   };
 
   return (
@@ -118,6 +125,12 @@ export default function RegisterPage() {
                 ))}
               </div>
             </div>
+
+            {error && (
+              <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
+                {error}
+              </div>
+            )}
 
             <button
               id="register-submit"

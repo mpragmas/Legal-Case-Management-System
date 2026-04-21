@@ -11,10 +11,11 @@ export default function RequestsPage() {
 
   const { role, currentUserId, requests, getLawyerById, getClientById } = useApp();
 
+  const myId = Number(currentUserId);
   const myRequests =
     role === "lawyer"
-      ? requests.filter((r) => r.lawyerId === currentUserId)
-      : requests.filter((r) => r.clientId === currentUserId);
+      ? requests.filter((r) => r.lawyerId === myId)
+      : requests.filter((r) => r.clientId === myId);
 
   const filteredRequests = myRequests.filter((r) => {
     if (statusFilter !== "all" && r.status !== statusFilter) return false;

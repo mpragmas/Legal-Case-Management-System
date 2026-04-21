@@ -9,10 +9,11 @@ import React from "react";
 const DocumentsPage = () => {
   const { role, currentUserId, cases, documents } = useApp();
 
+  const myIdNum = Number(currentUserId);
   const myCases = cases.filter((c) =>
     role === "lawyer"
-      ? c.lawyerId === currentUserId
-      : c.clientId === currentUserId,
+      ? Number(c.lawyerId) === myIdNum
+      : Number(c.clientId) === myIdNum,
   );
 
   const [currentPage, setCurrentPage] = useState(1);

@@ -1,4 +1,12 @@
-const BASE_URL = "http://localhost:5000/api";
+const ENV_BASE =
+  (typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env.VITE_API_BASE_URL) ||
+  (typeof process !== "undefined" &&
+    process.env &&
+    process.env.REACT_APP_API_BASE_URL);
+
+const BASE_URL = ENV_BASE || "http://localhost:5000/api";
 
 function getToken() {
   return localStorage.getItem("token");
@@ -17,22 +25,29 @@ async function request(method, path, body, isFormData = false) {
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: "Request failed" }));
-    throw new Error(err.message || "Request failed");
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.title || `Request failed (${res.status})`);
   }
   return res.json();
 }
 
 export const api = {
   // Auth
-  login: (email, password) => request("POST", "/auth/login", { email, password }),
-  login2FA: (email, code) => request("POST", "/auth/login-2fa", { email, code }),
+  login: (email, password) =>
+    request("POST", "/auth/login", { email, password }),
+  login2FA: (email, code) =>
+    request("POST", "/auth/login-2fa", { email, code }),
   register: (fullName, email, password, role) =>
     request("POST", "/auth/register", { fullName, email, password, role }),
-  forgotPassword: (email) => request("POST", "/auth/forgot-password", { email }),
-  resetPassword: (token, newPassword) => request("POST", "/auth/reset-password", { token, newPassword }),
+  forgotPassword: (email) =>
+    request("POST", "/auth/forgot-password", { email }),
+  resetPassword: (token, newPassword) =>
+    request("POST", "/auth/reset-password", { token, newPassword }),
   enable2FA: () => request("POST", "/auth/2fa/enable"),
-  verify2FA: (email, code) => request("POST", "/auth/2fa/verify", { email, code }),
+  verify2FA: (code) => request("POST", "/auth/2fa/verify", { code }),
+  disable2FA: () => request("POST", "/auth/2fa/disable"),
+  changePassword: (oldPassword, newPassword) =>
+    request("POST", "/auth/change-password", { oldPassword, newPassword }),
 
   // Lawyers
   getLawyers: () => request("GET", "/lawyers"),
@@ -55,6 +70,7 @@ export const api = {
   // Cases
   getCases: () => request("GET", "/cases"),
   getCase: (id) => request("GET", `/cases/${id}`),
+  updateCase: (id, data) => request("PUT", `/cases/${id}`, data),
 
   // Appointments
   getAppointments: () => request("GET", "/appointments"),
@@ -64,6 +80,43 @@ export const api = {
 
   // Documents
   getDocuments: () => request("GET", "/documents"),
+  downloadDocument: async (id, fileName, filePath) => {
+    const triggerBlob = (blob, name) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    };
+
+    // Try auth-protected endpoint first
+    try {
+      const token = getToken();
+      const res = await fetch(`${BASE_URL}/documents/${id}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        triggerBlob(await res.blob(), fileName);
+        return;
+      }
+    } catch { /* fall through */ }
+
+    // Fallback: fetch the static file directly (no auth needed for static files)
+    if (filePath) {
+      const cleanPath = filePath.startsWith("/") ? filePath.slice(1) : filePath;
+      const staticUrl = `http://localhost:5000/${cleanPath}`;
+      const res = await fetch(staticUrl);
+      if (res.ok) {
+        triggerBlob(await res.blob(), fileName);
+        return;
+      }
+    }
+
+    throw new Error("File not available on server");
+  },
   uploadDocument: (caseId, uploadedBy, file) => {
     const form = new FormData();
     form.append("caseId", caseId);
@@ -78,6 +131,8 @@ export const api = {
   markNotificationAsRead: (id) => request("PUT", `/notifications/${id}/read`),
 
   // Reviews
-  getReviewsByLawyer: (lawyerId) => request("GET", `/reviews/lawyer/${lawyerId}`),
-  createReview: (lawyerId, rating, comment) => request("POST", "/reviews", { lawyerId, rating, comment }),
+  getReviewsByLawyer: (lawyerId) =>
+    request("GET", `/reviews/lawyer/${lawyerId}`),
+  createReview: (lawyerId, rating, comment) =>
+    request("POST", "/reviews", { lawyerId, rating, comment }),
 };

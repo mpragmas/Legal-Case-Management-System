@@ -1,29 +1,43 @@
 import { useApp } from "../context/AppContext";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { CaseCard } from "../components/CaseCard";
-import { Briefcase, Search } from "lucide-react";
+import { Briefcase, Search, CheckCircle2, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
 export default function CasesPage() {
-  const { role, currentUserId, cases, getClientById } = useApp();
-  
+  const { role, currentUserId, cases, getClientById, updateCaseStatus } =
+    useApp();
+
   const [searchFilter, setSearchFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
 
+  const myId = Number(currentUserId);
   const myCases =
     role === "lawyer"
-      ? cases.filter((c) => c.lawyerId === currentUserId)
-      : cases.filter((c) => c.clientId === currentUserId);
+      ? cases.filter((c) => c.lawyerId === myId)
+      : cases.filter((c) => c.clientId === myId);
 
-  const uniqueClients = role === "lawyer" 
-    ? Array.from(new Set(myCases.map(c => c.clientId))).map(id => getClientById(id)).filter(Boolean)
-    : [];
+  const uniqueClients =
+    role === "lawyer"
+      ? Array.from(new Set(myCases.map((c) => c.clientId)))
+          .map((id) => getClientById(id))
+          .filter(Boolean)
+      : [];
 
   const filteredCases = myCases.filter((c) => {
-    if (searchFilter.trim() && !c.title.toLowerCase().includes(searchFilter.toLowerCase())) return false;
+    if (
+      searchFilter.trim() &&
+      !c.title.toLowerCase().includes(searchFilter.toLowerCase())
+    )
+      return false;
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
-    if (role === "lawyer" && clientFilter !== "all" && c.clientId !== clientFilter) return false;
+    if (
+      role === "lawyer" &&
+      clientFilter !== "all" &&
+      c.clientId !== Number(clientFilter)
+    )
+      return false;
     return true;
   });
 
@@ -43,7 +57,10 @@ export default function CasesPage() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-2xl border border-surface-200">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400"
+            />
             <input
               type="text"
               placeholder="Search by case title..."
@@ -68,8 +85,10 @@ export default function CasesPage() {
               className="px-3 py-2 rounded-xl border border-surface-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
               <option value="all">All Clients</option>
-              {uniqueClients.map(client => (
-                <option key={client.id} value={client.id}>{client.name}</option>
+              {uniqueClients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
               ))}
             </select>
           )}
@@ -89,7 +108,19 @@ export default function CasesPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {active.map((c) => (
-                    <CaseCard key={c.id} caseItem={c} />
+                    <div key={c.id} className="relative">
+                      <CaseCard caseItem={c} />
+                      {role === "lawyer" && (
+                        <button
+                          onClick={() => updateCaseStatus(c.id, "closed")}
+                          className="absolute top-5 right-13 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors z-10"
+                          title="Mark as Closed"
+                        >
+                          <CheckCircle2 size={13} />
+                          Close Case
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -101,7 +132,19 @@ export default function CasesPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {closed.map((c) => (
-                    <CaseCard key={c.id} caseItem={c} />
+                    <div key={c.id} className="relative">
+                      <CaseCard caseItem={c} />
+                      {role === "lawyer" && (
+                        <button
+                          onClick={() => updateCaseStatus(c.id, "active")}
+                          className="absolute top-5 right-13 flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors z-10"
+                          title="Reopen Case"
+                        >
+                          <RotateCcw size={13} />
+                          Reopen
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

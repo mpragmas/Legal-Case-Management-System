@@ -46,12 +46,10 @@ function ActivityChart({ data, title }) {
       <div className="flex items-end justify-between h-32 gap-2">
         {data.map((item, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
-            <div className="w-full relative">
-              <div 
-                className="w-full bg-primary-100 rounded-t-md group-hover:bg-primary-500 transition-all duration-300"
-                style={{ height: `${(item.value / max) * 100}%` }}
-              />
-            </div>
+            <div
+              className="w-full bg-primary-100 rounded-t-md group-hover:bg-primary-500 transition-all duration-300"
+              style={{ height: `${Math.round((item.value / max) * 96)}px`, minHeight: "3px" }}
+            />
             <span className="text-[10px] font-bold text-surface-400 uppercase">{item.label}</span>
           </div>
         ))}
@@ -103,9 +101,10 @@ function LawyerDashboard() {
     rejectRequest,
   } = useApp();
 
+  const myId = Number(currentUserId);
   const lawyer = getLawyerById(currentUserId);
-  const myRequests = requests.filter((r) => r.lawyerId === currentUserId);
-  const myCases = cases.filter((c) => c.lawyerId === currentUserId);
+  const myRequests = requests.filter((r) => r.lawyerId === myId);
+  const myCases = cases.filter((c) => c.lawyerId === myId);
   const pendingReqs = myRequests.filter((r) => r.status === "pending");
   const activeCases = myCases.filter((c) => c.status === "active");
 
@@ -113,8 +112,8 @@ function LawyerDashboard() {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const activityData = days.map((day, idx) => {
     const count = appointments.filter(a => {
-      const d = new Date(a.date);
-      return d.getDay() === idx && a.lawyerId === currentUserId;
+      const d = new Date(a.date + "T00:00:00");
+      return d.getDay() === idx && a.lawyerId === myId;
     }).length;
     return { label: day, value: count };
   });
@@ -211,10 +210,11 @@ function ClientDashboard() {
     upcomingReminders,
   } = useApp();
 
+  const myId = Number(currentUserId);
   const client = getClientById(currentUserId);
-  const myRequests = requests.filter((r) => r.clientId === currentUserId);
-  const myCases = cases.filter((c) => c.clientId === currentUserId);
-  const myAppointments = appointments.filter((a) => a.clientId === currentUserId);
+  const myRequests = requests.filter((r) => r.clientId === myId);
+  const myCases = cases.filter((c) => c.clientId === myId);
+  const myAppointments = appointments.filter((a) => a.clientId === myId);
   const myDocs = documents.filter((d) => myCases.some((c) => c.id === d.caseId));
   const activeCases = myCases.filter((c) => c.status === "active");
 

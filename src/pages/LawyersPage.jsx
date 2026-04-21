@@ -6,7 +6,7 @@ import { Modal } from "../components/Modal";
 import { Search } from "lucide-react";
 
 export default function LawyersPage() {
-  const { lawyers, requests, currentUserId, sendRequest } = useApp();
+  const { lawyers, requests, cases, currentUserId, sendRequest } = useApp();
   const [search, setSearch] = useState("");
   const [specFilter, setSpecFilter] = useState("all");
   const [expFilter, setExpFilter] = useState("all");
@@ -51,9 +51,21 @@ export default function LawyersPage() {
     setModalOpen(false);
   };
 
-  const requestedLawyerIds = requests
-    .filter((r) => r.clientId === currentUserId)
-    .map((r) => r.lawyerId);
+  const myId = Number(currentUserId);
+
+  // Lawyers with a pending request from this client
+  const pendingLawyerIds = new Set(
+    requests
+      .filter((r) => r.clientId === myId && r.status === "pending")
+      .map((r) => r.lawyerId)
+  );
+
+  // Lawyers the client already has an active case with
+  const activeCaseLawyerIds = new Set(
+    cases
+      .filter((c) => c.clientId === myId && c.status === "active")
+      .map((c) => c.lawyerId)
+  );
 
   return (
     <DashboardLayout>
@@ -113,7 +125,9 @@ export default function LawyersPage() {
               key={lawyer.id}
               lawyer={lawyer}
               onRequest={handleRequest}
-              requested={requestedLawyerIds.includes(lawyer.id)}
+              hasPending={pendingLawyerIds.has(lawyer.id)}
+              hasActiveCase={activeCaseLawyerIds.has(lawyer.id)}
+              isBusy={lawyer.activeClients >= lawyer.maxClients}
             />
           ))}
         </div>
