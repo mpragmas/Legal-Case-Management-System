@@ -1,470 +1,353 @@
-import { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { api } from "../services/api";
 
-const AppContext = createContext(null);
+const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  // ── Auth state ──
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("token"));
-  const [role, setRole] = useState(() => localStorage.getItem("role"));
-  const [currentUserId, setCurrentUserId] = useState(() => {
-    const id = localStorage.getItem("profileId");
-    return id ? Number(id) : null;
-  });
-  const [currentUserName, setCurrentUserName] = useState(() => localStorage.getItem("fullName") || "");
-
-  // ── Data stores ──
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [currentUserId, setCurrentUserId] = useState(localStorage.getItem("currentUserId"));
+  const [role, setRole] = useState(localStorage.getItem("role"));
+  
   const [lawyers, setLawyers] = useState([]);
   const [clients, setClients] = useState([]);
-  const [requests, setRequests] = useState([]);
   const [cases, setCases] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // ── Toast system ──
   const [toasts, setToasts] = useState([]);
+
+  const isAuthenticated = !!token;
 
   const addToast = useCallback((message, type = "success") => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
   }, []);
 
-  // ── Load all data from API ──
   const loadData = useCallback(async () => {
-    if (!localStorage.getItem("token")) return;
+    if (!token) return;
     setLoading(true);
     try {
-      const [lawyersData, clientsData, requestsData, casesData, appointmentsData, documentsData, notificationsData] =
-        await Promise.all([
-          api.getLawyers(),
-          api.getClients(),
-          api.getRequests(),
-          api.getCases(),
-          api.getAppointments(),
-          api.getDocuments(),
-          api.getNotifications(),
-        ]);
-      setLawyers(lawyersData);
-      setClients(clientsData);
-      setRequests(requestsData);
-      setCases(casesData);
-      setAppointments(appointmentsData);
-      setDocuments(documentsData);
-      setNotifications(notificationsData);
-    } catch (e) {
-      // Token may have expired
-      if (e.message?.includes("401") || e.message?.includes("Unauthorized")) {
-        logout();
-      }
+      const [l, c, cs, reqs, apts, docs, notifs] = await Promise.all([
+        api.getLawyers(),
+        api.getClients(),
+        api.getCases(),
+        api.getRequests(),
+        api.getAppointments(),
+        api.getDocuments(),
+        api.getNotifications().catch(() => [])
+      ]);
+      setLawyers(l);
+      setClients(c);
+      setCases(cs);
+      setRequests(reqs);
+      setAppointments(apts);
+      setDocuments(docs);
+      setNotifications(notifs);
+    } catch (error) {
+      console.error("Failed to load data", error);
     } finally {
       setLoading(false);
     }
-  }, []); // eslint-disable-line
+  }, [token]);
 
   useEffect(() => {
-    if (isAuthenticated) loadData();
-  }, [isAuthenticated, loadData]);
+    if (token) {
+      loadData();
+    }
+  }, [token, loadData]);
 
-  // ── Auth actions ──
-  const login = useCallback(
-    async (email, password) => {
-      try {
-        const data = await api.login(email, password);
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role);
-        localStorage.setItem("profileId", String(data.profileId));
-        localStorage.setItem("fullName", data.fullName);
-        setIsAuthenticated(true);
-        setRole(data.role);
-        setCurrentUserId(data.profileId);
-        setCurrentUserName(data.fullName);
-        addToast("Welcome back!", "success");
-        return true;
-      } catch {
-        addToast("Invalid email or password", "error");
-        return false;
-      }
-    },
-    [addToast]
-  );
+  const refreshData = useCallback(() => loadData(), [loadData]);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("profileId");
-    localStorage.removeItem("fullName");
-    setIsAuthenticated(false);
-    setRole(null);
-    setCurrentUserId(null);
-    setCurrentUserName("");
-    setLawyers([]);
-    setClients([]);
-    setRequests([]);
-    setCases([]);
-    setAppointments([]);
-    setDocuments([]);
-    addToast("Logged out successfully", "info");
-  }, [addToast]);
-
-  // ── Register ──
-  const register = useCallback(
-    async (fullName, email, password, userRole) => {
-      try {
-        const data = await api.register(fullName, email, password, userRole);
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role);
-        localStorage.setItem("profileId", String(data.profileId));
-        localStorage.setItem("fullName", data.fullName);
-        setIsAuthenticated(true);
-        setRole(data.role);
-        setCurrentUserId(data.profileId);
-        setCurrentUserName(data.fullName);
-        addToast("Account created!", "success");
-        return true;
-      } catch (e) {
-        addToast(e.message || "Registration failed", "error");
-        return false;
-      }
-    },
-    [addToast]
-  );
-
-  // ── Profile actions ──
-  const updateProfile = useCallback(
-    async (fields) => {
-      try {
-        if (role === "lawyer") {
-          await api.updateLawyer(currentUserId, {
-            fullName: fields.name,
-            specialization: fields.specialization,
-            bio: fields.bio,
-            yearsOfExperience: fields.experience,
-          });
-          setLawyers((prev) =>
-            prev.map((l) => (l.id === currentUserId ? { ...l, ...fields } : l))
-          );
-        } else {
-          await api.updateClient(currentUserId, {
-            fullName: fields.name,
-            phone: fields.phone,
-            address: fields.address,
-          });
-          setClients((prev) =>
-            prev.map((c) => (c.id === currentUserId ? { ...c, ...fields } : c))
-          );
-        }
-        addToast("Profile updated successfully!");
-      } catch {
-        addToast("Failed to update profile", "error");
-      }
-    },
-    [role, currentUserId, addToast]
-  );
-
-  const deleteProfile = useCallback(() => {
-    addToast("Profile deleted. Logging out...", "warning");
-    setTimeout(() => logout(), 1200);
-  }, [logout, addToast]);
-
-  // ── Request actions ──
-  const sendRequest = useCallback(
-    async (lawyerId, message) => {
-      try {
-        const req = await api.createRequest(lawyerId, currentUserId, message);
-        setRequests((prev) => [...prev, req]);
-        addToast("Request sent successfully!");
-      } catch {
-        addToast("Failed to send request", "error");
-      }
-    },
-    [currentUserId, addToast]
-  );
-
-  const acceptRequest = useCallback(
-    async (requestId) => {
-      try {
-        await api.acceptRequest(requestId);
-        setRequests((prev) =>
-          prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r))
-        );
-        const [casesData] = await Promise.all([api.getCases()]);
-        setCases(casesData);
-        addToast("Request accepted & case created!");
-      } catch {
-        addToast("Failed to accept request", "error");
-      }
-    },
-    [addToast]
-  );
-
-  const rejectRequest = useCallback(
-    async (requestId) => {
-      try {
-        await api.rejectRequest(requestId);
-        setRequests((prev) =>
-          prev.map((r) => (r.id === requestId ? { ...r, status: "rejected" } : r))
-        );
-        addToast("Request rejected", "warning");
-      } catch {
-        addToast("Failed to reject request", "error");
-      }
-    },
-    [addToast]
-  );
-
-  const cancelRequest = useCallback(
-    async (requestId) => {
-      try {
-        await api.deleteRequest(requestId);
-        setRequests((prev) => prev.filter((r) => r.id !== requestId));
-        addToast("Request cancelled");
-      } catch {
-        addToast("Failed to cancel request", "error");
-      }
-    },
-    [addToast]
-  );
-
-  // ── Appointment actions ──
-  const createSlot = useCallback(
-    async (date, time, duration = 60) => {
-      const now = new Date();
-      const selectedDate = new Date(`${date}T${time}:00`);
-
-      if (selectedDate < now) {
-        addToast("Cannot create slots in the past", "error");
-        return;
-      }
-
-      // Check for overlap
-      const isOverlap = appointments.some(
-        (a) => a.lawyerId === currentUserId && a.date === date && a.time === time
-      );
-      if (isOverlap) {
-        addToast("You already have a slot at this time", "error");
-        return;
-      }
-
-      try {
-        const apt = await api.createAppointment({
-          lawyerId: currentUserId,
-          clientId: null,
-          caseId: null,
-          date,
-          time,
-          duration,
-          status: "available",
-          notes: "",
-        });
-        setAppointments((prev) => [...prev, apt]);
-        addToast("Appointment slot created!");
-      } catch {
-        addToast("Failed to create slot", "error");
-      }
-    },
-    [currentUserId, appointments, addToast]
-  );
-
-  const bookAppointment = useCallback(
-    async (appointmentId, caseId) => {
-      const apt = appointments.find((a) => a.id === appointmentId);
-      if (apt) {
-        const now = new Date();
-        const aptDate = new Date(`${apt.date}T${apt.time}:00`);
-        if (aptDate < now) {
-          addToast("This appointment time has already passed", "error");
-          return;
-        }
-      }
-
-      try {
-        const updated = await api.updateAppointment(appointmentId, {
-          clientId: currentUserId,
-          caseId: caseId,
-          status: "confirmed",
-        });
-        setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? updated : a)));
-        addToast("Appointment booked!");
-      } catch {
-        addToast("Failed to book appointment", "error");
-      }
-    },
-    [currentUserId, appointments, addToast]
-  );
-
-  const editAppointment = useCallback(
-    async (appointmentId, updates) => {
-      try {
-        const updated = await api.updateAppointment(appointmentId, updates);
-        setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? updated : a)));
-        addToast("Appointment updated!");
-      } catch {
-        addToast("Failed to update appointment", "error");
-      }
-    },
-    [addToast]
-  );
-
-  const deleteAppointment = useCallback(
-    async (appointmentId) => {
-      try {
-        await api.deleteAppointment(appointmentId);
-        setAppointments((prev) => prev.filter((a) => a.id !== appointmentId));
-        addToast("Appointment deleted", "warning");
-      } catch {
-        addToast("Failed to delete appointment", "error");
-      }
-    },
-    [addToast]
-  );
-
-  const cancelAppointment = useCallback(
-    async (appointmentId) => {
-      try {
-        const updated = await api.updateAppointment(appointmentId, {
-          status: "available",
-          clearClient: true,
-          notes: "",
-        });
-        setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? updated : a)));
-        addToast("Appointment cancelled", "warning");
-      } catch {
-        addToast("Failed to cancel appointment", "error");
-      }
-    },
-    [addToast]
-  );
-
-  const completeAppointment = useCallback(
-    async (appointmentId) => {
-      try {
-        const updated = await api.updateAppointment(appointmentId, { status: "completed" });
-        setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? updated : a)));
-        addToast("Appointment marked as completed");
-      } catch {
-        addToast("Failed to complete appointment", "error");
-      }
-    },
-    [addToast]
-  );
-
-  const addNotes = useCallback(
-    async (appointmentId, notes) => {
-      try {
-        const updated = await api.updateAppointment(appointmentId, { notes });
-        setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? updated : a)));
-        addToast("Notes saved!");
-      } catch {
-        addToast("Failed to save notes", "error");
-      }
-    },
-    [addToast]
-  );
-
-  // ── Document actions ──
-  const uploadDocument = useCallback(
-    async (caseId, _fileName, _fileSize, file) => {
-      try {
-        const doc = await api.uploadDocument(caseId, String(currentUserId), file);
-        setDocuments((prev) => [...prev, doc]);
-        addToast("Document uploaded!");
-      } catch {
-        addToast("Failed to upload document", "error");
-      }
-    },
-    [currentUserId, addToast]
-  );
-
-  // ── Notification actions ──
-  const markAsRead = useCallback(async (id) => {
+  const login = useCallback(async (email, password) => {
     try {
-      await api.markNotificationAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
-    } catch (e) {
-      console.error("Failed to mark notification as read", e);
+      const res = await api.login(email, password);
+      localStorage.setItem("token", res.token);
+      localStorage.setItem("currentUserId", res.profileId);
+      localStorage.setItem("role", res.role);
+      setToken(res.token);
+      setCurrentUserId(res.profileId);
+      setRole(res.role);
+      return res;
+    } catch (error) {
+      throw error;
     }
   }, []);
 
-  // ── Helpers ──
-  const getLawyerById = useCallback((id) => lawyers.find((l) => l.id == id), [lawyers]);
-  const getClientById = useCallback((id) => clients.find((c) => c.id == id), [clients]);
+  const logout = useCallback(() => {
+    localStorage.clear();
+    setToken(null);
+    setCurrentUserId(null);
+    setRole(null);
+    setLawyers([]);
+    setClients([]);
+    setCases([]);
+    setRequests([]);
+    setAppointments([]);
+    setDocuments([]);
+    setNotifications([]);
+  }, []);
 
-  // ── Appointment reminders ──
+  // ─── Profile Actions ───
+  const updateProfile = useCallback(async (data) => {
+    try {
+      if (role === "lawyer") {
+        await api.updateLawyer(currentUserId, data);
+      } else {
+        await api.updateClient(currentUserId, data);
+      }
+      await loadData();
+      addToast("Profile updated successfully");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [role, currentUserId, loadData, addToast]);
+
+  const deleteProfile = useCallback(async () => {
+    try {
+      // Logic for deleting profile if API supports it, or just logout
+      logout();
+      addToast("Account deleted successfully");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [logout, addToast]);
+
+  // ─── Request Actions ───
+  const sendRequest = useCallback(async (lawyerId, message) => {
+    try {
+      await api.createRequest(lawyerId, currentUserId, message);
+      await loadData();
+      addToast("Request sent successfully");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [currentUserId, loadData, addToast]);
+
+  const acceptRequest = useCallback(async (id) => {
+    try {
+      await api.acceptRequest(id);
+      await loadData();
+      addToast("Request accepted");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [loadData, addToast]);
+
+  const rejectRequest = useCallback(async (id) => {
+    try {
+      await api.rejectRequest(id);
+      await loadData();
+      addToast("Request rejected");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [loadData, addToast]);
+
+  // ─── Appointment Actions ───
+  const createSlot = useCallback(async (date, time, duration = 60) => {
+    const now = new Date();
+    const selectedDate = new Date(`${date}T${time}:00`);
+
+    if (selectedDate < now) {
+      addToast("Cannot create slots in the past", "error");
+      return;
+    }
+
+    const overlap = appointments.find(a => 
+      String(a.lawyerId) === String(currentUserId) && a.date === date && a.time === time
+    );
+    if (overlap) {
+      addToast("You already have an appointment at this time", "error");
+      return;
+    }
+
+    try {
+      await api.createAppointment({
+        lawyerId: currentUserId,
+        clientId: null,
+        caseId: null,
+        date,
+        time,
+        duration,
+        status: "available",
+        notes: ""
+      });
+      await loadData();
+      addToast("Slot created");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [currentUserId, appointments, loadData, addToast]);
+
+  const bookAppointment = useCallback(async (appointmentId, caseId) => {
+    const apt = appointments.find(a => String(a.id) === String(appointmentId));
+    if (apt) {
+      const now = new Date();
+      const aptDate = new Date(`${apt.date}T${apt.time}:00`);
+      if (aptDate < now) {
+        addToast("This appointment time has already passed", "error");
+        return;
+      }
+    }
+
+    try {
+      await api.updateAppointment(appointmentId, {
+        clientId: currentUserId,
+        caseId: caseId,
+        status: "confirmed"
+      });
+      await loadData();
+      addToast("Appointment booked");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [currentUserId, appointments, loadData, addToast]);
+
+  const updateAppointmentStatus = useCallback(async (id, status, notes = "") => {
+    try {
+      await api.updateAppointment(id, { status, notes });
+      await loadData();
+      addToast(`Appointment ${status}`);
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [loadData, addToast]);
+
+  const editAppointment = useCallback(async (id, data) => {
+    try {
+      await api.updateAppointment(id, data);
+      await loadData();
+      addToast("Appointment updated");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [loadData, addToast]);
+
+  const deleteAppointment = useCallback(async (id) => {
+    try {
+      await api.deleteAppointment(id);
+      await loadData();
+      addToast("Appointment deleted");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [loadData, addToast]);
+
+  const cancelAppointment = useCallback(async (id) => {
+    return updateAppointmentStatus(id, "cancelled");
+  }, [updateAppointmentStatus]);
+
+  const completeAppointment = useCallback(async (id) => {
+    return updateAppointmentStatus(id, "completed");
+  }, [updateAppointmentStatus]);
+
+  const addNotes = useCallback(async (appointmentId, notes) => {
+    return updateAppointmentStatus(appointmentId, "completed", notes);
+  }, [updateAppointmentStatus]);
+
+  // ─── Document Actions ───
+  const uploadDocument = useCallback(async (caseId, _fileName, _fileSize, file) => {
+    try {
+      await api.uploadDocument(caseId, currentUserId, file);
+      await loadData();
+      addToast("Document uploaded");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [currentUserId, loadData, addToast]);
+
+  const deleteDocument = useCallback(async (id) => {
+    try {
+      await api.deleteDocument(id);
+      await loadData();
+      addToast("Document deleted");
+    } catch (error) {
+      addToast(error.message, "error");
+    }
+  }, [loadData, addToast]);
+
+  // ─── Notification Actions ───
+  const markAsRead = useCallback(async (id) => {
+    try {
+      await api.markNotificationAsRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    } catch (error) {
+      console.error("Failed to mark as read", error);
+    }
+  }, []);
+
+  // ─── Helpers ───
+  const getLawyerById = useCallback((id) => lawyers.find(l => String(l.id) === String(id)), [lawyers]);
+  const getClientById = useCallback((id) => clients.find(c => String(c.id) === String(id)), [clients]);
+  const getCaseById = useCallback((id) => cases.find(c => String(c.id) === String(id)), [cases]);
+
   const upcomingReminders = useMemo(() => {
     const now = new Date();
     return appointments
-      .filter((a) => {
-        if (a.status !== "confirmed") return false;
-        if (role === "lawyer" && a.lawyerId !== currentUserId) return false;
-        if (role === "client" && a.clientId !== currentUserId) return false;
-        const aptDate = new Date(`${a.date}T${a.time}:00`);
-        const diffMs = aptDate - now;
-        return diffMs > -3600000 && diffMs < 48 * 3600000;
-      })
-      .map((a) => {
-        const aptDate = new Date(`${a.date}T${a.time}:00`);
-        const diffMs = aptDate - now;
-        const diffHours = Math.round(diffMs / 3600000);
-        let timeLabel;
-        if (diffMs < 0) timeLabel = "Starting now";
-        else if (diffHours < 1) timeLabel = `in ${Math.max(1, Math.round(diffMs / 60000))} min`;
-        else if (diffHours === 1) timeLabel = "in 1 hour";
-        else if (diffHours < 24) timeLabel = `in ${diffHours} hours`;
-        else timeLabel = "tomorrow";
-        return { ...a, timeLabel };
-      })
-      .sort((a, b) => new Date(`${a.date}T${a.time}:00`) - new Date(`${b.date}T${b.time}:00`));
-  }, [appointments, role, currentUserId]);
+      .filter(a => a.status === "confirmed")
+      .map(a => ({
+        ...a,
+        dateTime: new Date(`${a.date}T${a.time}:00`)
+      }))
+      .filter(a => a.dateTime > now)
+      .sort((a, b) => a.dateTime - b.dateTime)
+      .map(a => ({
+        ...a,
+        timeLabel: `${new Date(a.date).toLocaleDateString()} ${a.time}`
+      }));
+  }, [appointments]);
 
   const value = {
-    isAuthenticated,
-    role,
+    token,
     currentUserId,
-    currentUserName,
-    loading,
-    login,
-    logout,
-    register,
-    updateProfile,
-    deleteProfile,
+    role,
     lawyers,
     clients,
-    requests,
     cases,
+    requests,
     appointments,
     documents,
     notifications,
+    loading,
     toasts,
-    addToast,
+    isAuthenticated,
+    login,
+    logout,
+    loadData,
+    refreshData,
+    updateProfile,
+    deleteProfile,
     sendRequest,
     acceptRequest,
     rejectRequest,
-    cancelRequest,
     createSlot,
     bookAppointment,
+    updateAppointmentStatus,
     editAppointment,
     deleteAppointment,
     cancelAppointment,
     completeAppointment,
     addNotes,
     uploadDocument,
+    deleteDocument,
     markAsRead,
     getLawyerById,
     getClientById,
+    getCaseById,
     upcomingReminders,
-    refreshData: loadData,
+    addToast
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error("useApp must be used inside AppProvider");
-  return ctx;
+  const context = useContext(AppContext);
+  if (!context) throw new Error("useApp must be used within an AppProvider");
+  return context;
 }

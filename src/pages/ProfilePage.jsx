@@ -20,6 +20,8 @@ import {
   BellRing,
   ShieldCheck,
   Globe,
+  Activity,
+  Layers,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -40,6 +42,7 @@ export default function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("Overview");
   const [form, setForm] = useState({});
   const [pwForm, setPwForm] = useState({ old: "", new: "", confirm: "" });
   const [settings, setSettings] = useState({
@@ -103,213 +106,239 @@ export default function ProfilePage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
-        {/* Modern Header / Cover */}
-        <div className="relative group">
-          <div className={`h-48 rounded-3xl overflow-hidden shadow-lg ${role === "lawyer" ? "bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-900" : "bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-800"}`}>
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="absolute top-6 right-6 flex gap-3">
+        {/* Concise Header */}
+        <div className="relative">
+          <div className={`h-32 rounded-2xl ${role === "lawyer" ? "bg-primary-600" : "bg-emerald-600"}`}>
+            <div className="absolute top-4 right-4">
               <button
                 onClick={openEdit}
-                className="px-5 py-2.5 rounded-xl bg-white/20 backdrop-blur-md text-white text-sm font-bold border border-white/30 hover:bg-white/30 transition-all cursor-pointer flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-white/10 text-white text-xs font-bold border border-white/20 hover:bg-white/20 transition-all flex items-center gap-2"
               >
-                <Pencil size={16} />
+                <Pencil size={14} />
                 Edit Profile
               </button>
             </div>
           </div>
-          <div className="absolute -bottom-12 left-8 flex items-end gap-6">
-            <div className="relative group/avatar">
-              <Avatar
-                initials={user.avatar}
-                size="xl"
-                className="ring-8 ring-white shadow-xl h-32 w-32"
-              />
-              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                <Globe size={24} className="text-white" />
-              </div>
-            </div>
+          <div className="absolute -bottom-8 left-8 flex items-end gap-4">
+            <Avatar
+              initials={user.avatar}
+              size="xl"
+              className="ring-4 ring-white shadow-md h-24 w-24"
+            />
             <div className="mb-2">
-              <h1 className="text-3xl font-black text-surface-900 tracking-tight">{user.name}</h1>
-              <p className="text-surface-500 font-medium flex items-center gap-2">
-                {role === "lawyer" ? (
-                  <>
-                    <Briefcase size={16} className="text-primary-500" />
-                    {user.specialization}
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck size={16} className="text-emerald-500" />
-                    Premium Client
-                  </>
-                )}
+              <h1 className="text-2xl font-bold text-surface-900">{user.name}</h1>
+              <p className="text-sm text-surface-500 font-medium flex items-center gap-2">
+                {role === "lawyer" ? user.specialization : "Verified Client"}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="pt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Quick Info */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-3xl border border-surface-200 shadow-sm space-y-4">
-              <h3 className="text-sm font-black text-surface-400 uppercase tracking-widest">Contact Info</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 group">
-                  <div className="p-2.5 rounded-xl bg-surface-50 text-surface-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
-                    <Mail size={18} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-surface-400 uppercase">Email Address</p>
-                    <p className="text-sm font-semibold text-surface-800 truncate">{user.email}</p>
-                  </div>
-                </div>
-                {role === "client" && (
-                  <>
-                    <div className="flex items-center gap-3 group">
-                      <div className="p-2.5 rounded-xl bg-surface-50 text-surface-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
-                        <Phone size={18} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-surface-400 uppercase">Phone Number</p>
-                        <p className="text-sm font-semibold text-surface-800">{user.phone || "Not set"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 group">
-                      <div className="p-2.5 rounded-xl bg-surface-50 text-surface-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
-                        <MapPin size={18} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-surface-400 uppercase">Office / Home</p>
-                        <p className="text-sm font-semibold text-surface-800">{user.address || "Not set"}</p>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {role === "lawyer" && (
-              <div className="bg-white p-6 rounded-3xl border border-surface-200 shadow-sm">
-                <h3 className="text-sm font-black text-surface-400 uppercase tracking-widest mb-4">Performance</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100">
-                    <Star size={20} className="text-amber-500 fill-amber-500 mb-1" />
-                    <p className="text-2xl font-black text-amber-700">{user.rating}</p>
-                    <p className="text-[10px] font-bold text-amber-600 uppercase">Rating</p>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
-                    <TrendingUp size={20} className="text-indigo-500 mb-1" />
-                    <p className="text-2xl font-black text-indigo-700">{user.casesWon}</p>
-                    <p className="text-[10px] font-bold text-indigo-600 uppercase">Cases Won</p>
-                  </div>
-                </div>
-              </div>
-            )}
+        <div className="pt-8">
+          {/* Tabs Navigation */}
+          <div className="flex items-center gap-6 border-b border-surface-200 mb-6 overflow-x-auto no-scrollbar">
+            {["Overview", "Settings", "Security"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`pb-3 text-xs font-bold uppercase tracking-wider transition-all relative ${
+                  activeTab === tab 
+                    ? "text-primary-600 border-b-2 border-primary-600" 
+                    : "text-surface-400 hover:text-surface-600"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
-          {/* Right Column: Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Bio Section */}
-            {role === "lawyer" && (
-              <div className="bg-white p-8 rounded-3xl border border-surface-200 shadow-sm">
-                <h3 className="text-sm font-black text-surface-400 uppercase tracking-widest mb-4">Biography</h3>
-                <p className="text-surface-600 leading-relaxed text-lg italic font-medium">
-                  "{user.bio || "No biography provided yet. Professional summary goes here."}"
-                </p>
-                <div className="mt-6 pt-6 border-t border-surface-100 flex items-center gap-6">
-                  <div>
-                    <p className="text-2xl font-black text-surface-900">{user.experience}+</p>
-                    <p className="text-xs font-bold text-surface-400 uppercase tracking-wider">Years Exp.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {activeTab === "Overview" && (
+              <>
+                <div className="space-y-6">
+                  <div className="bg-white p-6 rounded-xl border border-surface-200 space-y-4">
+                    <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest">Contact Info</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Mail size={16} className="text-surface-400" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold text-surface-300 uppercase">Email</p>
+                          <p className="text-sm font-medium text-surface-800 truncate">{user.email}</p>
+                        </div>
+                      </div>
+                      {role === "client" && (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <Phone size={16} className="text-surface-400" />
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-bold text-surface-300 uppercase">Phone</p>
+                              <p className="text-sm font-medium text-surface-800">{user.phone || "Not set"}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <MapPin size={16} className="text-surface-400" />
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-bold text-surface-300 uppercase">Address</p>
+                              <p className="text-sm font-medium text-surface-800">{user.address || "Not set"}</p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="h-10 w-[1px] bg-surface-100"></div>
-                  <div>
-                    <p className="text-2xl font-black text-surface-900">150+</p>
-                    <p className="text-xs font-bold text-surface-400 uppercase tracking-wider">Clients</p>
+
+                  {role === "lawyer" && (
+                    <div className="bg-white p-6 rounded-xl border border-surface-200">
+                      <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-4">Metrics</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded-lg bg-surface-50 border border-surface-100 text-center">
+                          <p className="text-xl font-bold text-primary-600">{user.rating}</p>
+                          <p className="text-[10px] font-bold text-surface-400 uppercase">Rating</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-surface-50 border border-surface-100 text-center">
+                          <p className="text-xl font-bold text-primary-600">{user.casesWon}</p>
+                          <p className="text-[10px] font-bold text-surface-400 uppercase">Won</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="lg:col-span-2 space-y-6">
+                  {role === "lawyer" && (
+                    <div className="bg-white p-6 rounded-xl border border-surface-200">
+                      <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-4">Biography</h3>
+                      <p className="text-sm text-surface-600 leading-relaxed italic">
+                        "{user.bio || "No professional summary provided."}"
+                      </p>
+                      <div className="mt-6 pt-6 border-t border-surface-100 flex items-center gap-6">
+                        <div>
+                          <p className="text-xl font-bold text-surface-900">{user.experience} yrs</p>
+                          <p className="text-[10px] font-bold text-surface-400 uppercase">Experience</p>
+                        </div>
+                        <div className="h-8 w-px bg-surface-100"></div>
+                        <div>
+                          <p className="text-xl font-bold text-surface-900">Active</p>
+                          <p className="text-[10px] font-bold text-surface-400 uppercase">Status</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {role === "client" && (
+                    <div className="bg-white p-6 rounded-xl border border-surface-200">
+                      <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-4">Case Overview</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-lg bg-surface-50 border border-surface-100 flex items-center gap-3">
+                          <Activity size={20} className="text-primary-600" />
+                          <p className="text-sm font-bold text-surface-900">Active Matters</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-surface-50 border border-surface-100 flex items-center gap-3">
+                          <Layers size={20} className="text-primary-600" />
+                          <p className="text-sm font-bold text-surface-900">Document Vault</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {activeTab === "Settings" && (
+              <div className="lg:col-span-3 space-y-8 animate-fade-in">
+                <div className="bg-white rounded-[3rem] border border-surface-200 shadow-sm overflow-hidden">
+                  <div className="px-10 py-8 border-b border-surface-100 bg-surface-50/50">
+                    <h3 className="text-xl font-black text-surface-900 tracking-tight flex items-center gap-3">
+                      <Settings size={24} className="text-primary-600" />
+                      Platform Preferences
+                    </h3>
+                  </div>
+                  <div className="p-10 space-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <div className="flex items-center justify-between p-6 rounded-[2rem] bg-surface-50 border border-surface-100 hover:border-primary-200 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3.5 bg-white text-primary-600 rounded-2xl shadow-sm">
+                            <BellRing size={24} />
+                          </div>
+                          <div>
+                            <p className="text-base font-black text-surface-900">Communication Alerts</p>
+                            <p className="text-xs text-surface-400 font-bold">Stay updated on case progress</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" className="sr-only peer" checked={settings.emailNotifs} onChange={(e) => setSettings({ ...settings, emailNotifs: e.target.checked })} />
+                          <div className="w-14 h-7 bg-surface-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-6 rounded-[2rem] bg-surface-50 border border-surface-100 hover:border-primary-200 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3.5 bg-white text-emerald-600 rounded-2xl shadow-sm">
+                            <ShieldCheck size={24} />
+                          </div>
+                          <div>
+                            <p className="text-base font-black text-surface-900">Advanced Security</p>
+                            <p className="text-xs text-surface-400 font-bold">Biometric or SMS verification</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" className="sr-only peer" checked={settings.twoFactor} onChange={(e) => setSettings({ ...settings, twoFactor: e.target.checked })} />
+                          <div className="w-14 h-7 bg-surface-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-600"></div>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-surface-400 uppercase tracking-widest ml-1">Interface Language</label>
+                        <select value={settings.language} onChange={(e) => setSettings({ ...settings, language: e.target.value })} className="w-full px-6 py-4 rounded-2xl border-2 border-surface-100 bg-white text-sm font-black outline-none focus:border-primary-500 transition-all appearance-none cursor-pointer">
+                          <option value="en">English (US)</option>
+                          <option value="es">Español</option>
+                          <option value="fr">Français</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-surface-400 uppercase tracking-widest ml-1">Local Timezone</label>
+                        <select value={settings.timezone} onChange={(e) => setSettings({ ...settings, timezone: e.target.value })} className="w-full px-6 py-4 rounded-2xl border-2 border-surface-100 bg-white text-sm font-black outline-none focus:border-primary-500 transition-all appearance-none cursor-pointer">
+                          <option value="UTC">Universal Time (UTC)</option>
+                          <option value="EST">Eastern Time (EST)</option>
+                          <option value="PST">Pacific Time (PST)</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Account Settings */}
-            <div className="bg-white rounded-3xl border border-surface-200 shadow-sm overflow-hidden">
-              <div className="px-8 py-5 border-b border-surface-100 flex items-center justify-between bg-surface-50/50">
-                <h3 className="font-black text-surface-900 tracking-tight flex items-center gap-2">
-                  <Settings size={20} className="text-primary-600" />
-                  Account Settings
-                </h3>
-              </div>
-              <div className="p-8 space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="flex items-center justify-between p-4 rounded-2xl border border-surface-100 hover:border-primary-200 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-primary-50 text-primary-600 rounded-xl">
-                        <BellRing size={20} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-surface-800">Email Alerts</p>
-                        <p className="text-[10px] text-surface-400 font-medium">Updates and reminders</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={settings.emailNotifs} onChange={(e) => setSettings({ ...settings, emailNotifs: e.target.checked })} />
-                      <div className="w-11 h-6 bg-surface-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 rounded-2xl border border-surface-100 hover:border-primary-200 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
-                        <ShieldCheck size={20} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-surface-800">Security Check</p>
-                        <p className="text-[10px] text-surface-400 font-medium">Two-factor protection</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={settings.twoFactor} onChange={(e) => setSettings({ ...settings, twoFactor: e.target.checked })} />
-                      <div className="w-11 h-6 bg-surface-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black text-surface-400 uppercase tracking-widest ml-1">Language</label>
-                    <select value={settings.language} onChange={(e) => setSettings({ ...settings, language: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-surface-200 bg-surface-50/50 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary-500 transition-all">
-                      <option value="en">English (US)</option>
-                      <option value="es">Español</option>
-                      <option value="fr">Français</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black text-surface-400 uppercase tracking-widest ml-1">Timezone</label>
-                    <select value={settings.timezone} onChange={(e) => setSettings({ ...settings, timezone: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-surface-200 bg-surface-50/50 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary-500 transition-all">
-                      <option value="UTC">UTC (Universal)</option>
-                      <option value="EST">EST (Eastern)</option>
-                      <option value="PST">PST (Pacific)</option>
-                    </select>
-                  </div>
+            {activeTab === "Security" && (
+              <div className="lg:col-span-3 space-y-8 animate-fade-in">
+                <div className="bg-white p-10 rounded-[3rem] border border-surface-200 shadow-sm flex flex-col items-center text-center">
+                   <div className="h-20 w-20 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-6 ring-8 ring-red-50/50">
+                      <ShieldCheck size={40} />
+                   </div>
+                   <h3 className="text-2xl font-black text-surface-900 mb-2">Security Controls</h3>
+                   <p className="text-surface-500 max-w-md mb-10">Manage your credentials and account access. Ensure your sensitive legal data remains protected.</p>
+                   
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+                      <button
+                        onClick={() => setPasswordOpen(true)}
+                        className="px-8 py-5 rounded-3xl bg-surface-900 text-white font-black hover:bg-black transition-all flex items-center justify-center gap-3 shadow-xl active:scale-[0.98]"
+                      >
+                        <Lock size={20} />
+                        Rotate Password
+                      </button>
+                      <button
+                        onClick={() => setDeleteOpen(true)}
+                        className="px-8 py-5 rounded-3xl bg-white border-2 border-red-100 text-red-600 font-black hover:bg-red-50 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                      >
+                        <Trash2 size={20} />
+                        Delete Identity
+                      </button>
+                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Critical Actions */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => setPasswordOpen(true)}
-                className="flex-1 px-8 py-4 rounded-3xl bg-white border border-surface-200 text-surface-700 font-bold hover:bg-surface-50 transition-all flex items-center justify-center gap-3 shadow-sm active:scale-[0.98] cursor-pointer"
-              >
-                <Lock size={20} className="text-surface-400" />
-                Security Settings
-              </button>
-              <button
-                onClick={() => setDeleteOpen(true)}
-                className="flex-1 px-8 py-4 rounded-3xl bg-red-50 border border-red-100 text-red-600 font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-3 shadow-sm active:scale-[0.98] cursor-pointer"
-              >
-                <Trash2 size={20} />
-                Terminate Account
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>

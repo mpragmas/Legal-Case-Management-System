@@ -55,10 +55,10 @@ export function Sidebar({ open, onClose }) {
         {/* Brand */}
         <div className="flex items-center justify-between h-16 px-5 border-b border-surface-200">
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700">
+            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary-600">
               <Scale size={18} className="text-white" />
             </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+            <span className="text-lg font-bold text-surface-900">
               LegalDesk
             </span>
           </div>
@@ -105,7 +105,7 @@ export function Sidebar({ open, onClose }) {
         {/* Bottom user info */}
         <div className="px-4 py-4 border-t border-surface-200">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-surface-50">
-            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xs font-bold shrink-0">
+            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary-100 text-primary-700 text-xs font-bold shrink-0">
               {user?.avatar || "?"}
             </div>
             <div className="min-w-0">

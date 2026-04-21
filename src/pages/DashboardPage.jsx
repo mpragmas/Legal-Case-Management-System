@@ -8,39 +8,28 @@ import {
   Briefcase,
   CalendarClock,
   Inbox,
-  Users,
   TrendingUp,
   Clock,
-  ArrowRight,
   Star,
   Bell,
   FileText,
   Check,
   X,
-  Zap,
   Activity,
   Layers,
 } from "lucide-react";
 
-/* ─── Modern Stat Card ─────────────────────────────────────── */
-function StatCard({ icon: Icon, label, value, color, to, trend }) {
+/* ─── Stat Card ────────────────────────────────────────────── */
+function StatCard({ icon: Icon, label, value, color, to }) {
   const inner = (
-    <div className="bg-white rounded-[2rem] border border-surface-200 p-6 hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-500 group relative overflow-hidden">
-      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        <Icon size={80} />
-      </div>
-      <div className="relative flex items-start justify-between">
-        <div className="space-y-3">
-          <div className={`inline-flex items-center justify-center h-12 w-12 rounded-2xl ${color} shadow-sm`}>
-            <Icon size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-surface-400 uppercase tracking-widest">{label}</p>
-            <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-black text-surface-900 tracking-tight">{value}</p>
-              {trend && <span className="text-xs font-bold text-emerald-500">{trend}</span>}
-            </div>
-          </div>
+    <div className="bg-white rounded-xl border border-surface-200 p-4 hover:border-primary-300 transition-all duration-200 group">
+      <div className="flex items-center gap-4">
+        <div className={`flex items-center justify-center h-10 w-10 rounded-lg ${color} shrink-0`}>
+          <Icon size={20} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-surface-500 font-bold uppercase tracking-wider">{label}</p>
+          <p className="text-xl font-bold text-surface-900">{value}</p>
         </div>
       </div>
     </div>
@@ -48,38 +37,51 @@ function StatCard({ icon: Icon, label, value, color, to, trend }) {
   return to ? <Link to={to}>{inner}</Link> : inner;
 }
 
-/* ─── Improved Reminder Banner ─────────────────────────────── */
+/* ─── Activity Chart ─────────────────────────────────── */
+function ActivityChart({ data, title }) {
+  const max = Math.max(...data.map(d => d.value), 1);
+  return (
+    <div className="bg-white rounded-xl border border-surface-200 p-5">
+      <h3 className="text-sm font-bold text-surface-900 mb-6">{title}</h3>
+      <div className="flex items-end justify-between h-32 gap-2">
+        {data.map((item, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+            <div className="w-full relative">
+              <div 
+                className="w-full bg-primary-100 rounded-t-md group-hover:bg-primary-500 transition-all duration-300"
+                style={{ height: `${(item.value / max) * 100}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-bold text-surface-400 uppercase">{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Reminder Banner ──────────────────────────────────────── */
 function ReminderBanner({ reminders, role, getLawyerById, getClientById }) {
   if (reminders.length === 0) return null;
   return (
-    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-8 text-white shadow-xl shadow-amber-500/20 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
-        <Zap size={120} />
+    <div className="bg-surface-50 rounded-xl border border-surface-200 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Bell size={16} className="text-primary-600" />
+        <h3 className="text-[10px] font-bold text-surface-900 uppercase tracking-widest">Upcoming</h3>
       </div>
-      <div className="relative flex flex-col md:flex-row items-center gap-8">
-        <div className="flex-1 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest mb-4">
-            <Activity size={12} /> Live Action Needed
-          </div>
-          <h3 className="text-2xl font-black tracking-tight mb-2">Upcoming Meetings</h3>
-          <p className="text-amber-50 font-medium max-w-md">
-            You have {reminders.length} session{reminders.length > 1 ? 's' : ''} scheduled for today. Don't be late!
-          </p>
-        </div>
-        <div className="flex -space-x-3 overflow-hidden">
-          {reminders.slice(0, 3).map((apt) => {
-             const other = role === "lawyer" ? getClientById(apt.clientId) : getLawyerById(apt.lawyerId);
-             return <Avatar key={apt.id} initials={other?.avatar} className="ring-4 ring-amber-500" size="md" />
-          })}
-          {reminders.length > 3 && (
-            <div className="h-10 w-10 rounded-full bg-amber-600 flex items-center justify-center text-xs font-bold ring-4 ring-amber-500">
-              +{reminders.length - 3}
+      <div className="space-y-2">
+        {reminders.slice(0, 1).map((apt) => {
+          const other = role === "lawyer" ? getClientById(apt.clientId) : getLawyerById(apt.lawyerId);
+          return (
+            <div key={apt.id} className="flex items-center gap-3 p-2 rounded-lg bg-white border border-surface-100">
+              <Clock size={14} className="text-surface-400" />
+              <div className="flex-1 min-w-0 text-xs">
+                <p className="font-bold text-surface-900">{apt.timeLabel}</p>
+                <p className="text-surface-500 truncate">{other?.name}</p>
+              </div>
             </div>
-          )}
-        </div>
-        <Link to="/appointments" className="px-6 py-3 rounded-2xl bg-white text-amber-600 font-bold hover:bg-amber-50 transition-colors shadow-lg active:scale-95">
-          Join Session
-        </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -104,107 +106,89 @@ function LawyerDashboard() {
   const lawyer = getLawyerById(currentUserId);
   const myRequests = requests.filter((r) => r.lawyerId === currentUserId);
   const myCases = cases.filter((c) => c.lawyerId === currentUserId);
-  const activeCases = myCases.filter((c) => c.status === "active");
   const pendingReqs = myRequests.filter((r) => r.status === "pending");
+  const activeCases = myCases.filter((c) => c.status === "active");
+
+  // Dynamic activity data: Appointments per day this week
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const activityData = days.map((day, idx) => {
+    const count = appointments.filter(a => {
+      const d = new Date(a.date);
+      return d.getDay() === idx && a.lawyerId === currentUserId;
+    }).length;
+    return { label: day, value: count };
+  });
 
   return (
-    <div className="space-y-10">
-      {/* Dynamic Header */}
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="flex-1 bg-white rounded-[3rem] border border-surface-200 p-8 shadow-sm flex items-center gap-8 flex-wrap">
-          <Avatar initials={lawyer?.avatar} size="xl" className="ring-8 ring-primary-50" />
-          <div className="flex-1 min-w-[200px]">
-            <p className="text-xs font-black text-primary-600 uppercase tracking-widest mb-1">Elite Counsel</p>
-            <h2 className="text-3xl font-black text-surface-900 tracking-tight">Welcome back, {lawyer?.name}</h2>
-            <div className="flex items-center gap-4 mt-3 flex-wrap">
-               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-50 text-surface-500 text-xs font-bold border border-surface-100">
-                 <Star size={14} className="fill-amber-400 text-amber-400" /> {lawyer?.rating} Rating
-               </span>
-               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-50 text-surface-500 text-xs font-bold border border-surface-100">
-                 <Check size={14} className="text-emerald-500" /> {lawyer?.casesWon} Won
-               </span>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-surface-900">Lawyer Dashboard</h1>
+          <p className="text-sm text-surface-500">Welcome back, counselor.</p>
         </div>
-        <div className="lg:w-1/3">
-          <ReminderBanner reminders={upcomingReminders} role="lawyer" getLawyerById={getLawyerById} getClientById={getClientById} />
-        </div>
+        <ReminderBanner
+          reminders={upcomingReminders}
+          role="lawyer"
+          getLawyerById={getLawyerById}
+          getClientById={getClientById}
+        />
       </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={Inbox} label="New Inbound" value={pendingReqs.length} color="bg-amber-100 text-amber-600" to="/requests" trend="+2 today" />
-        <StatCard icon={Briefcase} label="Managed Cases" value={activeCases.length} color="bg-primary-100 text-primary-600" to="/cases" trend="0% change" />
-        <StatCard icon={CalendarClock} label="Today's Agenda" value={upcomingReminders.length} color="bg-indigo-100 text-indigo-600" to="/appointments" trend="Full day" />
-        <StatCard icon={Users} label="Total Reach" value={myCases.length + pendingReqs.length} color="bg-purple-100 text-purple-600" trend="+5% week" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={Inbox} label="Requests" value={pendingReqs.length} color="bg-amber-50 text-amber-600" to="/requests" />
+        <StatCard icon={Briefcase} label="Active" value={activeCases.length} color="bg-blue-50 text-blue-600" to="/cases" />
+        <StatCard icon={CalendarClock} label="Today" value={upcomingReminders.length} color="bg-emerald-50 text-emerald-600" to="/appointments" />
+        <StatCard icon={Star} label="Rating" value={lawyer?.rating || "0.0"} color="bg-purple-50 text-purple-600" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Left: Inbound Queue */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-black text-surface-900 tracking-tight flex items-center gap-2">
-              <Layers size={24} className="text-primary-600" />
-              Inbound Request Queue
-            </h3>
-            <Link to="/requests" className="text-sm font-bold text-primary-600 hover:underline">View Priority →</Link>
-          </div>
-          
-          {pendingReqs.length === 0 ? (
-            <div className="bg-surface-50 rounded-[2.5rem] border-2 border-dashed border-surface-200 p-20 text-center">
-              <Inbox size={48} className="mx-auto mb-4 text-surface-300" />
-              <p className="text-surface-500 font-bold">Your queue is currently empty</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pendingReqs.slice(0, 3).map((req) => {
-                const client = getClientById(req.clientId);
-                return (
-                  <div key={req.id} className="bg-white rounded-3xl border border-surface-200 p-6 flex items-center gap-6 hover:shadow-md transition-shadow group">
-                    <Avatar initials={client?.avatar} size="lg" className="ring-4 ring-surface-50" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-black text-surface-900 truncate">{client?.name}</h4>
-                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-[10px] font-black text-amber-600 uppercase tracking-widest">Priority</span>
+          <ActivityChart data={activityData} title="Weekly Activity" />
+          <div className="bg-white rounded-xl border border-surface-200 p-5">
+            <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-4">Priority Requests</h3>
+            {pendingReqs.length === 0 ? (
+              <p className="text-sm text-surface-400 italic text-center py-4">No pending requests</p>
+            ) : (
+              <div className="space-y-3">
+                {pendingReqs.slice(0, 3).map((req) => {
+                  const client = getClientById(req.clientId);
+                  return (
+                    <div key={req.id} className="flex items-center gap-3 p-3 rounded-lg bg-surface-50 border border-surface-100">
+                      <Avatar initials={client?.avatar} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-surface-800 truncate">{client?.name}</p>
+                        <p className="text-xs text-surface-400 truncate">{req.message}</p>
                       </div>
-                      <p className="text-sm text-surface-500 line-clamp-1">{req.message}</p>
+                      <div className="flex gap-1">
+                        <button onClick={() => acceptRequest(req.id)} className="p-1.5 rounded-md bg-white border border-surface-200 text-emerald-600 hover:bg-emerald-50">
+                          <Check size={14} />
+                        </button>
+                        <button onClick={() => rejectRequest(req.id)} className="p-1.5 rounded-md bg-white border border-surface-200 text-red-600 hover:bg-red-50">
+                          <X size={14} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => acceptRequest(req.id)} className="px-6 py-2.5 rounded-xl bg-primary-600 text-white font-bold text-sm hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20 active:scale-95">Accept</button>
-                      <button onClick={() => rejectRequest(req.id)} className="p-2.5 rounded-xl border border-surface-200 text-surface-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-                        <X size={20} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Right: Active Radar */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-black text-surface-900 tracking-tight flex items-center gap-2">
-            <Briefcase size={24} className="text-indigo-600" />
-            Active Radar
-          </h3>
-          <div className="space-y-4">
-            {activeCases.slice(0, 4).map((c) => (
-              <div key={c.id} className="bg-white rounded-3xl border border-surface-200 p-5 hover:border-primary-300 transition-colors cursor-pointer group">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black">
-                    {c.id}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-black text-surface-900 truncate group-hover:text-primary-600 transition-colors">{c.title}</h4>
-                    <p className="text-xs text-surface-400 font-bold uppercase tracking-widest mt-0.5">{c.status}</p>
-                  </div>
+        <div className="bg-white rounded-xl border border-surface-200 p-5">
+          <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-4">Active Matters</h3>
+          <div className="space-y-3">
+            {activeCases.slice(0, 5).map((c) => (
+              <div key={c.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-50 border border-transparent hover:border-surface-100 cursor-pointer group">
+                <div className="h-8 w-8 rounded bg-surface-100 text-surface-500 flex items-center justify-center text-[10px] font-bold">
+                  {c.id}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-sm font-bold text-surface-900 truncate group-hover:text-primary-600">{c.title}</h4>
+                  <p className="text-[10px] font-bold text-surface-400 uppercase">{c.status}</p>
                 </div>
               </div>
             ))}
-            <Link to="/cases" className="block w-full py-4 text-center text-sm font-black text-surface-400 hover:text-primary-600 transition-colors uppercase tracking-widest">
-              View All Radar →
-            </Link>
+            {activeCases.length === 0 && <p className="text-xs text-surface-400 italic text-center">No active cases</p>}
           </div>
         </div>
       </div>
@@ -230,140 +214,105 @@ function ClientDashboard() {
   const client = getClientById(currentUserId);
   const myRequests = requests.filter((r) => r.clientId === currentUserId);
   const myCases = cases.filter((c) => c.clientId === currentUserId);
-  const activeCases = myCases.filter((c) => c.status === "active");
+  const myAppointments = appointments.filter((a) => a.clientId === currentUserId);
   const myDocs = documents.filter((d) => myCases.some((c) => c.id === d.caseId));
+  const activeCases = myCases.filter((c) => c.status === "active");
+
+  // Dynamic progress data: Cases created per month
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  const progressData = months.map((m, idx) => {
+    const count = myCases.filter(c => new Date(c.createdAt).getMonth() === idx).length;
+    return { label: m, value: count };
+  });
 
   return (
-    <div className="space-y-10 pb-10">
-      {/* Portal Header */}
-      <div className="relative rounded-[3rem] overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-900 p-12 text-white shadow-2xl shadow-emerald-900/20">
-        <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12">
-          <Layers size={200} />
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-surface-900">Client Portal</h1>
+          <p className="text-sm text-surface-500">Hello, {client?.name}.</p>
         </div>
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest mb-6">
-              Verified Client Portal
-            </div>
-            <h2 className="text-5xl font-black tracking-tight mb-2">Hello, {client?.name}!</h2>
-            <p className="text-emerald-100 text-lg font-medium max-w-lg">
-              Your legal journey is in progress. We've compiled your latest updates and case statuses here.
-            </p>
-          </div>
-          <div className="flex gap-4">
-             <div className="p-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-center min-w-[120px]">
-               <p className="text-3xl font-black">{activeCases.length}</p>
-               <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Active Cases</p>
-             </div>
-             <div className="p-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-center min-w-[120px]">
-               <p className="text-3xl font-black">{myDocs.length}</p>
-               <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Total Docs</p>
-             </div>
-          </div>
-        </div>
+        <ReminderBanner
+          reminders={upcomingReminders}
+          role="client"
+          getLawyerById={getLawyerById}
+          getClientById={getClientById}
+        />
       </div>
 
-      {/* Urgent Reminders */}
-      <ReminderBanner reminders={upcomingReminders} role="client" getLawyerById={getLawyerById} getClientById={getClientById} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={Inbox} label="Requests" value={myRequests.length} color="bg-amber-50 text-amber-600" to="/requests" />
+        <StatCard icon={Briefcase} label="Active" value={activeCases.length} color="bg-blue-50 text-blue-600" to="/cases" />
+        <StatCard icon={CalendarClock} label="Appts" value={myAppointments.length} color="bg-emerald-50 text-emerald-600" to="/appointments" />
+        <StatCard icon={FileText} label="Documents" value={myDocs.length} color="bg-purple-50 text-purple-600" to="/documents" />
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Main Feed: Cases */}
-        <div className="lg:col-span-2 space-y-8">
-           <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-black text-surface-900 tracking-tight">Active Legal Matters</h3>
-              <Link to="/cases" className="text-sm font-bold text-primary-600 hover:underline">Full Portfolio →</Link>
-           </div>
-
-           {activeCases.length === 0 ? (
-             <div className="bg-white rounded-[2.5rem] border border-surface-200 p-16 text-center shadow-sm">
-                <Briefcase size={64} className="mx-auto mb-6 text-surface-200" />
-                <h4 className="text-xl font-black text-surface-900 mb-2">No Active Cases Yet</h4>
-                <p className="text-surface-500 mb-8 max-w-xs mx-auto">Start by browsing our legal experts and submitting a representation request.</p>
-                <Link to="/lawyers" className="px-8 py-4 rounded-2xl bg-primary-600 text-white font-black shadow-xl shadow-primary-600/20 hover:scale-105 transition-transform inline-block">Find a Lawyer</Link>
-             </div>
-           ) : (
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <ActivityChart data={progressData} title="Legal Progress" />
+          <div className="bg-white rounded-xl border border-surface-200 p-5">
+            <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-4">Active Matters</h3>
+            {activeCases.length === 0 ? (
+              <div className="text-center py-10 bg-surface-50 rounded-xl border-2 border-dashed border-surface-200">
+                <p className="text-sm text-surface-500 font-bold mb-4">No active cases found</p>
+                <Link to="/lawyers" className="px-6 py-2 rounded-lg bg-primary-600 text-white text-sm font-bold">Find a Lawyer</Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {activeCases.slice(0, 4).map((c) => (
                   <CaseCard key={c.id} caseItem={c} />
                 ))}
-             </div>
-           )}
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Sidebar: Documents & Requests */}
-        <div className="space-y-10">
-           {/* Recent Files */}
-           <div className="bg-white rounded-[2.5rem] border border-surface-200 p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-black text-surface-900 flex items-center gap-2">
-                  <FileText size={20} className="text-primary-600" />
-                  Recent Files
-                </h3>
-                <Link to="/documents" className="text-xs font-bold text-surface-400 hover:text-primary-600 uppercase">View All</Link>
-              </div>
-              
-              {myDocs.length === 0 ? (
-                <p className="text-sm text-surface-400 py-4 italic">No documents shared yet.</p>
-              ) : (
-                <div className="space-y-4">
-                  {myDocs.slice(-4).reverse().map((doc) => (
-                    <div key={doc.id} className="flex items-center gap-4 group cursor-pointer">
-                      <div className="h-10 w-10 rounded-xl bg-surface-50 text-surface-400 flex items-center justify-center group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
-                        <FileText size={18} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-surface-800 truncate group-hover:text-primary-600 transition-colors">{doc.name}</p>
-                        <p className="text-[10px] font-bold text-surface-400 uppercase">{doc.size} • {new Date(doc.uploadedAt).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))}
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-5">
+            <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-4">Files</h3>
+            <div className="space-y-3">
+              {myDocs.slice(-3).reverse().map((doc) => (
+                <div key={doc.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-50 cursor-pointer group">
+                  <div className="h-8 w-8 rounded bg-primary-50 text-primary-600 flex items-center justify-center">
+                    <FileText size={14} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-surface-900 truncate group-hover:text-primary-600">{doc.name}</p>
+                    <p className="text-[10px] font-bold text-surface-400 uppercase">{doc.size}</p>
+                  </div>
                 </div>
-              )}
-           </div>
-
-           {/* Representation Requests */}
-           <div className="bg-white rounded-[2.5rem] border border-surface-200 p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-black text-surface-900 flex items-center gap-2">
-                  <Inbox size={20} className="text-amber-500" />
-                  Sent Requests
-                </h3>
-                <Link to="/requests" className="text-xs font-bold text-surface-400 hover:text-primary-600 uppercase">Full History</Link>
-              </div>
-
-              <div className="space-y-4">
-                {myRequests.slice(0, 3).map((req) => {
-                  const lawyer = getLawyerById(req.lawyerId);
-                  return (
-                    <div key={req.id} className="flex items-center gap-4">
-                      <Avatar initials={lawyer?.avatar} size="md" className="ring-2 ring-surface-50" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-surface-800 truncate">{lawyer?.name}</p>
-                        <StatusBadge status={req.status} />
-                      </div>
+              ))}
+              {myDocs.length === 0 && <p className="text-xs text-surface-400 italic text-center">No documents</p>}
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-surface-200 p-5">
+            <h3 className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-4">Representation</h3>
+            <div className="space-y-3">
+              {myRequests.slice(0, 3).map((req) => {
+                const lawyer = getLawyerById(req.lawyerId);
+                return (
+                  <div key={req.id} className="flex items-center gap-3">
+                    <Avatar initials={lawyer?.avatar} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-surface-900 truncate">{lawyer?.name}</p>
+                      <StatusBadge status={req.status} />
                     </div>
-                  );
-                })}
-                {myRequests.length === 0 && <p className="text-sm text-surface-400 italic">No pending requests.</p>}
-              </div>
-           </div>
+                  </div>
+                );
+              })}
+              {myRequests.length === 0 && <p className="text-xs text-surface-400 italic text-center">No requests</p>}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   MAIN DASHBOARD PAGE
-   ═══════════════════════════════════════════════════════════════ */
 export default function DashboardPage() {
   const { role } = useApp();
-
   return (
     <DashboardLayout>
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-        {role === "lawyer" ? <LawyerDashboard /> : <ClientDashboard />}
-      </div>
+      {role === "lawyer" ? <LawyerDashboard /> : <ClientDashboard />}
     </DashboardLayout>
   );
 }

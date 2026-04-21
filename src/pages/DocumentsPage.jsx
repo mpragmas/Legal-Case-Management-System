@@ -17,6 +17,8 @@ const DocumentsPage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [caseFilter, setCaseFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("newest");
 
   const filteredDocs = documents
     .filter((d) => {

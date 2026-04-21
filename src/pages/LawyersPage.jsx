@@ -18,6 +18,8 @@ export default function LawyersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
+  const uniqueSpecializations = Array.from(new Set(lawyers.map((l) => l.specialization)));
+
   const filtered = lawyers.filter((l) => {
     if (search.trim()) {
       const q = search.toLowerCase();

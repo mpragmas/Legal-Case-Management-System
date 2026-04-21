@@ -1,9 +1,10 @@
 import { useRef } from "react";
 import { useApp } from "../context/AppContext";
-import { FileText, Upload, Calendar } from "lucide-react";
+import { FileText, Upload, Calendar, Trash2, Download, ExternalLink } from "lucide-react";
+import { api } from "../services/api";
 
 export function DocumentList({ documents, caseId, showUpload = false }) {
-  const { uploadDocument, getLawyerById, getClientById, cases } = useApp();
+  const { uploadDocument, getLawyerById, getClientById, cases, refreshData, addToast } = useApp();
   const fileInputRef = useRef(null);
 
   const handleFileChange = async (e) => {
@@ -11,6 +12,13 @@ export function DocumentList({ documents, caseId, showUpload = false }) {
     if (!file || !caseId) return;
     await uploadDocument(caseId, file.name, `${(file.size / 1024).toFixed(0)} KB`, file);
     e.target.value = "";
+  };
+
+  const getFileUrl = (filePath) => {
+    if (!filePath) return "#";
+    // If path starts with /, remove it to avoid double slashes
+    const cleanPath = filePath.startsWith("/") ? filePath.slice(1) : filePath;
+    return `http://localhost:5000/${cleanPath}`;
   };
 
   return (
@@ -66,9 +74,54 @@ export function DocumentList({ documents, caseId, showUpload = false }) {
                     <span>Uploaded by: {uploader?.name || "Unknown"}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-surface-400 shrink-0">
-                  <Calendar size={12} />
-                  {new Date(doc.uploadedAt).toLocaleDateString()}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-col items-end gap-1 text-xs text-surface-400">
+                    <span className="flex items-center gap-1">
+                      <Calendar size={12} />
+                      {new Date(doc.uploadedAt).toLocaleDateString()}
+                    </span>
+                    <span>{doc.size}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <a
+                      href={getFileUrl(doc.filePath)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-surface-400 hover:bg-primary-50 hover:text-primary-600 rounded-lg transition-all"
+                      title="View Document"
+                    >
+                      <ExternalLink size={16} />
+                    </a>
+                    <a
+                      href={getFileUrl(doc.filePath)}
+                      download={doc.name}
+                      className="p-2 text-surface-400 hover:bg-primary-50 hover:text-primary-600 rounded-lg transition-all"
+                      title="Download Document"
+                      onClick={(e) => {
+                        // For same-origin files, download attribute works. 
+                        // For cross-origin, we might need to fetch and blob if it doesn't work.
+                      }}
+                    >
+                      <Download size={16} />
+                    </a>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm("Are you sure you want to delete this document?")) {
+                           try {
+                             await api.deleteDocument(doc.id);
+                             refreshData();
+                             addToast("Document deleted", "info");
+                           } catch {
+                             addToast("Failed to delete document", "error");
+                           }
+                        }
+                      }}
+                      className="p-2 text-surface-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all"
+                      title="Delete Document"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

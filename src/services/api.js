@@ -26,8 +26,13 @@ async function request(method, path, body, isFormData = false) {
 export const api = {
   // Auth
   login: (email, password) => request("POST", "/auth/login", { email, password }),
+  login2FA: (email, code) => request("POST", "/auth/login-2fa", { email, code }),
   register: (fullName, email, password, role) =>
     request("POST", "/auth/register", { fullName, email, password, role }),
+  forgotPassword: (email) => request("POST", "/auth/forgot-password", { email }),
+  resetPassword: (token, newPassword) => request("POST", "/auth/reset-password", { token, newPassword }),
+  enable2FA: () => request("POST", "/auth/2fa/enable"),
+  verify2FA: (email, code) => request("POST", "/auth/2fa/verify", { email, code }),
 
   // Lawyers
   getLawyers: () => request("GET", "/lawyers"),
@@ -71,4 +76,8 @@ export const api = {
   // Notifications
   getNotifications: () => request("GET", "/notifications"),
   markNotificationAsRead: (id) => request("PUT", `/notifications/${id}/read`),
+
+  // Reviews
+  getReviewsByLawyer: (lawyerId) => request("GET", `/reviews/lawyer/${lawyerId}`),
+  createReview: (lawyerId, rating, comment) => request("POST", "/reviews", { lawyerId, rating, comment }),
 };

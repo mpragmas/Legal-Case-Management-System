@@ -5,6 +5,7 @@ import { StatusBadge } from "../components/StatusBadge";
 import { Avatar } from "../components/Avatar";
 import { DocumentList } from "../components/DocumentList";
 import { NotesSection } from "../components/NotesSection";
+import { ReviewSection } from "../components/ReviewSection";
 import { ArrowLeft, User, Scale } from "lucide-react";
 
 export default function CaseDetailPage() {
@@ -126,6 +127,17 @@ export default function CaseDetailPage() {
               showUpload
             />
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="bg-white rounded-2xl border border-surface-200 p-6">
+          <h3 className="text-base font-semibold text-surface-900 mb-6">
+            Lawyer Reviews & Feedback
+          </h3>
+          <ReviewSection 
+            lawyerId={caseItem.lawyerId} 
+            isClient={role === "client"} 
+          />
         </div>
       </div>
     </DashboardLayout>

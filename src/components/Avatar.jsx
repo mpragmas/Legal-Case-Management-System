@@ -7,7 +7,7 @@ export function Avatar({ initials, size = "md", className = "" }) {
   };
   return (
     <div
-      className={`flex items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white font-bold shrink-0 ${sizes[size]} ${className}`}
+      className={`flex items-center justify-center rounded-full bg-primary-600 text-white font-bold shrink-0 ${sizes[size]} ${className}`}
     >
       {initials}
     </div>
