@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError("");
     if (!email.trim()) {
-      setError("Please enter your email address");
+      setError("Please provide your email address");
       return;
     }
     setLoading(true);
