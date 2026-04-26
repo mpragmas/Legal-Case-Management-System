@@ -47,7 +47,6 @@ export default function ProfilePage() {
   const [pwForm, setPwForm] = useState({ old: "", new: "", confirm: "" });
 
   // 2FA enable flow
-  const [tfaSecret, setTfaSecret] = useState("");
   const [tfaCode, setTfaCode] = useState("");
   const [tfaLoading, setTfaLoading] = useState(false);
   const [tfaError, setTfaError] = useState("");
@@ -125,7 +124,7 @@ export default function ProfilePage() {
 
   const handleVerify2FA = async () => {
     if (tfaCode.length !== 6) {
-      setTfaError("Enter the 6-digit code from your authenticator app");
+      setTfaError("Enter the 6-digit verification code");
       return;
     }
     setTfaLoading(true);
@@ -133,7 +132,6 @@ export default function ProfilePage() {
     try {
       await enableTwoFactor(tfaCode);
       setTfaSetupOpen(false);
-      setTfaSecret("");
       setTfaCode("");
     } catch (err) {
       setTfaError(err.message || "Invalid code. Please try again.");
@@ -153,14 +151,11 @@ export default function ProfilePage() {
 
   const openTfaSetup = async () => {
     setTfaSetupOpen(true);
-    setTfaSecret("");
     setTfaCode("");
     setTfaError("");
-    // Immediately kick off the enable request to get the secret
     setTfaLoading(true);
     try {
-      const res = await api.enable2FA();
-      setTfaSecret(res.secret);
+      await api.enable2FA();
     } catch (err) {
       setTfaError(err.message || "Failed to start 2FA setup");
     } finally {
@@ -374,21 +369,18 @@ export default function ProfilePage() {
       </Modal>
 
       {/* 2FA Setup Modal */}
-      <Modal open={tfaSetupOpen} onClose={() => { setTfaSetupOpen(false); setTfaSecret(""); setTfaCode(""); setTfaError(""); }} title="Enable Two-Factor Authentication">
+      <Modal open={tfaSetupOpen} onClose={() => { setTfaSetupOpen(false); setTfaCode(""); setTfaError(""); }} title="Enable Two-Factor Authentication">
         <div className="space-y-5">
-          {tfaLoading && !tfaSecret ? (
-            <div className="text-center py-8 text-surface-400 text-sm">Generating secret…</div>
-          ) : tfaSecret ? (
+          {tfaLoading && !tfaCode ? (
+            <div className="text-center py-8 text-surface-400 text-sm">Sending code to your email…</div>
+          ) : (
             <>
               <div className="p-4 rounded-xl bg-surface-50 border border-surface-200 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold text-surface-500 uppercase tracking-widest">
-                  <QrCode size={14} /> Your Secret Key
+                  <Mail size={14} /> Email Verification
                 </div>
-                <p className="font-mono text-sm text-surface-800 break-all bg-white px-3 py-2 rounded-lg border border-surface-200 select-all">
-                  {tfaSecret}
-                </p>
                 <p className="text-xs text-surface-500 leading-relaxed">
-                  Open your authenticator app (Google Authenticator, Authy, etc.), add a new account, and enter this key manually. Then enter the 6-digit code below.
+                  We've sent a 6-digit verification code to <strong>{user.email}</strong>. Please enter it below to enable Two-Factor Authentication.
                 </p>
               </div>
 
@@ -418,17 +410,6 @@ export default function ProfilePage() {
                 className="w-full py-3 rounded-xl bg-primary-600 text-white font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/20 active:scale-[0.98] disabled:opacity-60"
               >
                 {tfaLoading ? "Verifying…" : "Verify & Enable"}
-              </button>
-            </>
-          ) : (
-            <>
-              {tfaError && (
-                <div className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
-                  {tfaError}
-                </div>
-              )}
-              <button onClick={handleEnable2FA} className="w-full py-3 rounded-xl bg-primary-600 text-white font-bold hover:bg-primary-700 transition-all">
-                Try Again
               </button>
             </>
           )}

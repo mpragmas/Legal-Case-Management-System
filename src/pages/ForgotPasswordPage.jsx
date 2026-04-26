@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError("");
     if (!email.trim()) {
-      setError("Please enter your email address");
+      setError("Please provide your email address");
       return;
     }
     setLoading(true);
@@ -29,7 +29,8 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  const cardClass = "bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl";
+  const cardClass =
+    "bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-surface-900 via-primary-950 to-surface-900 px-4">
@@ -40,7 +41,11 @@ export default function ForgotPasswordPage() {
         <div className={cardClass}>
           <div className="flex flex-col items-center mb-8">
             <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-500/30 mb-4">
-              {sent ? <CheckCircle2 size={28} className="text-white" /> : <Mail size={28} className="text-white" />}
+              {sent ? (
+                <CheckCircle2 size={28} className="text-white" />
+              ) : (
+                <Mail size={28} className="text-white" />
+              )}
             </div>
             <h1 className="text-2xl font-bold text-white">
               {sent ? "Check Your Email" : "Forgot Password"}
@@ -76,11 +81,16 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Email Address</label>
+                <label className="block text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError("");
+                  }}
                   placeholder="you@example.com"
                   className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
                   autoFocus
