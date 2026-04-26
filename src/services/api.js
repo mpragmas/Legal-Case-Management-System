@@ -6,7 +6,8 @@ const ENV_BASE =
     process.env &&
     process.env.REACT_APP_API_BASE_URL);
 
-const BASE_URL = ENV_BASE || "http://localhost:5000/api";
+const BASE_URL =
+  ENV_BASE || "https://legal-case-management-system-api-1.onrender.com/api";
 
 function getToken() {
   return localStorage.getItem("token");
@@ -26,7 +27,9 @@ async function request(method, path, body, isFormData = false) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.title || `Request failed (${res.status})`);
+    throw new Error(
+      err.message || err.title || `Request failed (${res.status})`,
+    );
   }
   return res.json();
 }
@@ -102,7 +105,9 @@ export const api = {
         triggerBlob(await res.blob(), fileName);
         return;
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
 
     // Fallback: fetch the static file directly (no auth needed for static files)
     if (filePath) {
